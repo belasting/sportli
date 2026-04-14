@@ -85,7 +85,10 @@ export const ChatConversationScreen: React.FC<Props> = ({ navigation, route }) =
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.userInfo}>
+        <TouchableOpacity
+          style={styles.userInfo}
+          onPress={() => navigation.navigate('UserProfile', { user: matchedUser })}
+        >
           <View style={styles.avatarWrapper}>
             <Image source={{ uri: matchedUser.photos[0] }} style={styles.avatar} />
             <View style={styles.onlineDot} />

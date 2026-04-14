@@ -48,15 +48,18 @@ export const ChatListScreen: React.FC = () => {
         onPress={() => navigation.navigate('ChatConversation', { conversation: item })}
         activeOpacity={0.7}
       >
-        {/* Avatar */}
-        <View style={styles.avatarContainer}>
+
+        {/* Avatar — tik om profiel te bekijken */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate('UserProfile', { user: item.matchedUser })}
+          style={styles.avatarContainer}
+        >
           <Image
             source={{ uri: item.matchedUser.photos[0] }}
             style={styles.avatar}
           />
-          {/* Online indicator (mock) */}
-          {Math.random() > 0.5 && <View style={styles.onlineDot} />}
-        </View>
+          <View style={styles.onlineDot} />
+        </TouchableOpacity>
 
         {/* Content */}
         <View style={styles.conversationContent}>

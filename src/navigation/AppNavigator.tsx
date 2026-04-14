@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthNavigator } from './AuthNavigator';
 import { TabNavigator } from './TabNavigator';
 import { ChatConversationScreen } from '../screens/ChatConversationScreen';
+import { UserProfileScreen } from '../screens/UserProfileScreen';
 import { PremiumScreen } from '../screens/PremiumScreen';
 import { RootStackParamList } from '../types';
 
@@ -33,6 +34,11 @@ export const AppNavigator: React.FC = () => {
           name="ChatConversation"
           component={ChatConversationScreen}
           options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="UserProfile"
+          component={UserProfileScreen}
+          options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
         />
         <Stack.Screen
           name="Premium"

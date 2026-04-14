@@ -24,6 +24,7 @@ interface SwipeCardProps {
   panHandlers?: object;
   likeOpacity?: Animated.AnimatedInterpolation<string | number>;
   nopeOpacity?: Animated.AnimatedInterpolation<string | number>;
+  onInfoPress?: () => void;
 }
 
 export const SwipeCard: React.FC<SwipeCardProps> = ({
@@ -33,6 +34,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
   panHandlers,
   likeOpacity,
   nopeOpacity,
+  onInfoPress,
 }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
 
@@ -131,10 +133,17 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
           ))}
         </View>
 
-        {/* Bio */}
-        <Text style={styles.bio} numberOfLines={2}>
-          {user.bio}
-        </Text>
+        {/* Bio + info button row */}
+        <View style={styles.bioRow}>
+          <Text style={styles.bio} numberOfLines={2}>
+            {user.bio}
+          </Text>
+          {onInfoPress && (
+            <TouchableOpacity onPress={onInfoPress} style={styles.infoBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="information-circle" size={30} color={Colors.white} />
+            </TouchableOpacity>
+          )}
+        </View>
       </LinearGradient>
     </Animated.View>
   );
@@ -265,9 +274,18 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.xs,
   },
+  bioRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: Spacing.sm,
+  },
   bio: {
+    flex: 1,
     ...Typography.bodySmall,
     color: 'rgba(255,255,255,0.82)',
     lineHeight: 18,
+  },
+  infoBtn: {
+    opacity: 0.9,
   },
 });

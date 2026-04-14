@@ -11,7 +11,10 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MOCK_USERS, CURRENT_USER } from '../data/mockUsers';
+import { RootStackParamList } from '../types';
 import { SwipeCard } from '../components/SwipeCard';
 import { ActionButton } from '../components/ActionButton';
 import { MatchModal } from '../components/MatchModal';
@@ -22,6 +25,7 @@ import { User } from '../types';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [matchedUser, setMatchedUser] = useState<User | null>(null);
   const [showMatch, setShowMatch] = useState(false);
@@ -92,6 +96,7 @@ export const HomeScreen: React.FC = () => {
               panHandlers={panResponder.panHandlers}
               likeOpacity={getLikeOpacity()}
               nopeOpacity={getNopeOpacity()}
+              onInfoPress={() => navigation.navigate('UserProfile', { user })}
             />
           );
         }

@@ -74,6 +74,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   ChatConversation: { conversation: Conversation };
+  UserProfile: { user: User; fromMatch?: boolean };
   Premium: undefined;
 };
 
