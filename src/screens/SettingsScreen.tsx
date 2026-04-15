@@ -13,13 +13,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 };
 
 export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
-  const [darkMode, setDarkMode] = useState(false);
+  const { isDark, toggleTheme, colors } = useTheme();
   const [matchNotif, setMatchNotif] = useState(true);
   const [messageNotif, setMessageNotif] = useState(true);
   const [groupNotif, setGroupNotif] = useState(false);
@@ -30,8 +31,8 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionCard}>{children}</View>
+      <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{title}</Text>
+      <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>{children}</View>
     </View>
   );
 
@@ -60,38 +61,38 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       activeOpacity={onPress ? 0.7 : 1}
       disabled={!onPress && !onToggle}
     >
-      <View style={[styles.iconWrap, danger && styles.iconWrapDanger]}>
-        <Ionicons name={icon as any} size={18} color={danger ? Colors.accent : Colors.primary} />
+      <View style={[styles.iconWrap, danger && styles.iconWrapDanger, !danger && { backgroundColor: colors.primaryLight }]}>
+        <Ionicons name={icon as any} size={18} color={danger ? colors.accent : colors.primary} />
       </View>
       <View style={styles.rowContent}>
-        <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>{label}</Text>
-        {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
+        <Text style={[styles.rowLabel, { color: danger ? colors.accent : colors.textPrimary }]}>{label}</Text>
+        {sublabel && <Text style={[styles.rowSublabel, { color: colors.textMuted }]}>{sublabel}</Text>}
       </View>
       {onToggle !== undefined && value !== undefined ? (
         <Switch
           value={value}
           onValueChange={onToggle}
-          trackColor={{ false: Colors.border, true: Colors.primaryLight }}
-          thumbColor={value ? Colors.primary : Colors.textMuted}
+          trackColor={{ false: colors.border, true: colors.primaryLight }}
+          thumbColor={value ? colors.primary : colors.textMuted}
         />
       ) : chevron ? (
-        <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
       ) : null}
     </TouchableOpacity>
   );
 
-  const Divider = () => <View style={styles.divider} />;
+  const Divider = () => <View style={[styles.divider, { backgroundColor: colors.border }]} />;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Settings</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -101,8 +102,8 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
             icon="moon-outline"
             label="Dark Mode"
             sublabel="Switch to dark theme"
-            value={darkMode}
-            onToggle={setDarkMode}
+            value={isDark}
+            onToggle={toggleTheme}
           />
         </Section>
 
@@ -249,7 +250,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
           />
         </Section>
 
-        <Text style={styles.version}>Sportli v1.0.0</Text>
+        <Text style={[styles.version, { color: colors.textMuted }]}>Sportli v1.0.0</Text>
       </ScrollView>
     </View>
   );
