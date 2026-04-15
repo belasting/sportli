@@ -66,12 +66,12 @@ export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Floating back button */}
+      {/* Floating close button */}
       <TouchableOpacity
         style={styles.backBtn}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="arrow-back" size={22} color={Colors.white} />
+        <Ionicons name="close" size={22} color={Colors.white} />
       </TouchableOpacity>
 
       {/* Floating action row top-right */}

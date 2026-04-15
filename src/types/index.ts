@@ -55,6 +55,28 @@ export type Match = {
   matchedAt: Date;
 };
 
+// ─── Group Chat ───────────────────────────────────────────────────────────────
+
+export type GroupMessage = {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderPhoto: string;
+  text: string;
+  timestamp: Date;
+};
+
+export type GroupChat = {
+  id: string;
+  name: string;
+  sport: Sport;
+  members: Pick<User, 'id' | 'name' | 'photos'>[];
+  messages: GroupMessage[];
+  lastMessage?: GroupMessage;
+  unreadCount: number;
+  coverPhoto?: string;
+};
+
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 export type AuthStackParamList = {

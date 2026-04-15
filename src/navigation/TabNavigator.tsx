@@ -125,6 +125,14 @@ export const TabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
+        name="Group"
+        component={GroupChatListScreen}
+        options={{
+          tabBarLabel: 'Groups',
+          tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{

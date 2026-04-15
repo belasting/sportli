@@ -24,6 +24,7 @@ type Props = {
 
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [name, setName] = useState('');
+  const [age, setAge] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [dobDay, setDobDay] = useState('');
@@ -105,6 +106,18 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               placeholder="Alex Rivera"
               icon="person-outline"
               autoCapitalize="words"
+            />
+            <FocusableInput
+              label="Age"
+              value={age}
+              onChangeText={(v) => {
+                const n = v.replace(/[^0-9]/g, '');
+                if (n === '' || (parseInt(n) >= 13 && parseInt(n) <= 100)) setAge(n);
+                else if (n.length <= 2) setAge(n);
+              }}
+              placeholder="25"
+              icon="calendar-outline"
+              keyboardType="number-pad"
             />
             <FocusableInput
               label="Email"

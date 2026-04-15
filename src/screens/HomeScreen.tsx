@@ -272,6 +272,17 @@ export const HomeScreen: React.FC = () => {
         </View>
       )}
 
+      {/* Filter Modal */}
+      <FilterModal
+        visible={showFilter}
+        initial={activeFilters}
+        onClose={() => setShowFilter(false)}
+        onApply={(filters) => {
+          setActiveFilters(filters);
+          setShowFilter(false);
+        }}
+      />
+
       {/* Match Modal */}
       {matchedUser && (
         <MatchModal
