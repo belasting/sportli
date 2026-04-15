@@ -4,14 +4,17 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ChatListScreen } from '../screens/ChatListScreen';
+import { GroupChatListScreen } from '../screens/GroupChatListScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { MainTabParamList } from '../types';
 import { Colors, Typography } from '../theme';
 import { MOCK_CONVERSATIONS } from '../data/mockChats';
+import { MOCK_GROUPS } from '../data/mockGroups';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const totalUnread = MOCK_CONVERSATIONS.reduce((acc, c) => acc + c.unreadCount, 0);
+const chatUnread = MOCK_CONVERSATIONS.reduce((acc, c) => acc + c.unreadCount, 0);
+const groupUnread = MOCK_GROUPS.reduce((acc, g) => acc + g.unreadCount, 0);
 
 const TabIcon = ({
   name,
@@ -37,7 +40,13 @@ const TabIcon = ({
 );
 
 const tabStyles = StyleSheet.create({
-  iconWrapper: { position: 'relative', width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  iconWrapper: {
+    position: 'relative',
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   badge: {
     position: 'absolute',
     top: -4,
@@ -52,7 +61,12 @@ const tabStyles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.white,
   },
-  badgeText: { ...Typography.caption, color: Colors.white, fontWeight: '800', fontSize: 10 },
+  badgeText: {
+    ...Typography.caption,
+    color: Colors.white,
+    fontWeight: '800',
+    fontSize: 10,
+  },
 });
 
 export const TabNavigator: React.FC = () => {
@@ -86,8 +100,8 @@ export const TabNavigator: React.FC = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Discover',
-          tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
+          tabBarLabel: 'Swipe',
+          tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -96,7 +110,17 @@ export const TabNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'Messages',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name="chatbubble" focused={focused} badge={totalUnread} />
+            <TabIcon name="chatbubble-ellipses" focused={focused} badge={chatUnread} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Group"
+        component={GroupChatListScreen}
+        options={{
+          tabBarLabel: 'Groups',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="people" focused={focused} badge={groupUnread} />
           ),
         }}
       />
@@ -105,7 +129,7 @@ export const TabNavigator: React.FC = () => {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="person-circle" focused={focused} />,
         }}
       />
     </Tab.Navigator>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -37,6 +37,10 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
   onInfoPress,
 }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [user.id]);
 
   const handlePhotoTap = (side: 'left' | 'right') => {
     if (side === 'right' && photoIndex < user.photos.length - 1) {

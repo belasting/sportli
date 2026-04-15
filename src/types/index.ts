@@ -67,6 +67,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Chat: undefined;
+  Group: undefined;
   Profile: undefined;
 };
 
@@ -75,7 +76,35 @@ export type RootStackParamList = {
   Main: undefined;
   ChatConversation: { conversation: Conversation };
   UserProfile: { user: User; fromMatch?: boolean };
+  GroupChat: { group: GroupChatType };
+  CreateGroup: undefined;
   Premium: undefined;
+  Settings: undefined;
+  EditProfile: undefined;
+};
+
+// ─── Group Chat ───────────────────────────────────────────────────────────────
+
+export type GroupChatType = {
+  id: string;
+  name: string;
+  sport: Sport;
+  members: User[];
+  memberCount: number;
+  messages: Message[];
+  lastMessage?: Message;
+  coverEmoji: string;
+  description: string;
+  unreadCount: number;
+};
+
+// ─── Filters ──────────────────────────────────────────────────────────────────
+
+export type FilterState = {
+  maxDistance: number;
+  selectedSports: string[];
+  skillLevel: SkillLevel | null;
+  city: string | null;
 };
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────

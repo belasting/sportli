@@ -4,14 +4,17 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthNavigator } from './AuthNavigator';
 import { TabNavigator } from './TabNavigator';
 import { ChatConversationScreen } from '../screens/ChatConversationScreen';
+import { GroupChatScreen } from '../screens/GroupChatScreen';
 import { UserProfileScreen } from '../screens/UserProfileScreen';
 import { PremiumScreen } from '../screens/PremiumScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { CreateGroupScreen } from '../screens/CreateGroupScreen';
 import { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
-  // In production, derive from auth state (Supabase session)
   const [isAuthenticated] = useState(false);
 
   return (
@@ -22,9 +25,9 @@ export const AppNavigator: React.FC = () => {
           animation: 'slide_from_right',
         }}
       >
-        {!isAuthenticated ? (
+        {!isAuthenticated && (
           <Stack.Screen name="Auth" component={AuthNavigator} />
-        ) : null}
+        )}
         <Stack.Screen
           name="Main"
           component={TabNavigator}
@@ -36,6 +39,11 @@ export const AppNavigator: React.FC = () => {
           options={{ animation: 'slide_from_right' }}
         />
         <Stack.Screen
+          name="GroupChat"
+          component={GroupChatScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
           name="UserProfile"
           component={UserProfileScreen}
           options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
@@ -43,6 +51,21 @@ export const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="Premium"
           component={PremiumScreen}
+          options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="EditProfile"
+          component={EditProfileScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="CreateGroup"
+          component={CreateGroupScreen}
           options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
         />
       </Stack.Navigator>

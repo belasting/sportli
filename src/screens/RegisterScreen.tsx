@@ -26,6 +26,9 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [dobDay, setDobDay] = useState('');
+  const [dobMonth, setDobMonth] = useState('');
+  const [dobYear, setDobYear] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -144,6 +147,48 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                   </Text>
                 </View>
               )}
+            </View>
+
+            {/* Date of Birth */}
+            <View style={styles.dobWrapper}>
+              <Text style={styles.dobLabel}>Date of Birth</Text>
+              <View style={styles.dobRow}>
+                <View style={[styles.dobField, { flex: 1 }]}>
+                  <TextInput
+                    style={styles.dobInput}
+                    value={dobDay}
+                    onChangeText={(v) => setDobDay(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                    placeholder="DD"
+                    placeholderTextColor={Colors.textMuted}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                  />
+                </View>
+                <Text style={styles.dobSep}>/</Text>
+                <View style={[styles.dobField, { flex: 1 }]}>
+                  <TextInput
+                    style={styles.dobInput}
+                    value={dobMonth}
+                    onChangeText={(v) => setDobMonth(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                    placeholder="MM"
+                    placeholderTextColor={Colors.textMuted}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                  />
+                </View>
+                <Text style={styles.dobSep}>/</Text>
+                <View style={[styles.dobField, { flex: 2 }]}>
+                  <TextInput
+                    style={styles.dobInput}
+                    value={dobYear}
+                    onChangeText={(v) => setDobYear(v.replace(/[^0-9]/g, '').slice(0, 4))}
+                    placeholder="YYYY"
+                    placeholderTextColor={Colors.textMuted}
+                    keyboardType="number-pad"
+                    maxLength={4}
+                  />
+                </View>
+              </View>
             </View>
           </View>
 
@@ -296,6 +341,32 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   strengthLabel: { ...Typography.caption, fontWeight: '600', minWidth: 45 },
+  dobWrapper: { gap: Spacing.xs },
+  dobLabel: { ...Typography.label, color: Colors.textSecondary },
+  dobRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  dobField: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    alignItems: 'center',
+  },
+  dobInput: {
+    ...Typography.bodyLarge,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    width: '100%',
+  },
+  dobSep: {
+    ...Typography.h3,
+    color: Colors.textMuted,
+  },
   terms: { ...Typography.caption, color: Colors.textMuted, textAlign: 'center', lineHeight: 18 },
   termsLink: { color: Colors.primary, textDecorationLine: 'underline' },
   loginLink: { alignSelf: 'center' },

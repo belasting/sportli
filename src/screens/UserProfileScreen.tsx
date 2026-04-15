@@ -168,7 +168,7 @@ export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={styles.actionButtons}>
             <TouchableOpacity
               style={[styles.actionBtn, styles.nopeBtn]}
-              onPress={() => navigation.goBack()}
+              onPress={() => navigation.navigate('Main', { screen: 'Home' } as any)}
             >
               <Ionicons name="close" size={28} color={Colors.accent} />
             </TouchableOpacity>
