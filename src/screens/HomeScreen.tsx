@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,11 +20,14 @@ import { ActionButton } from '../components/ActionButton';
 import { MatchModal } from '../components/MatchModal';
 import { FilterModal } from '../components/FilterModal';
 import { ToastNotification } from '../components/ToastNotification';
+import { PromoNotification, PROMO_MESSAGES, PromoConfig } from '../components/PromoNotification';
 import { useSwipeAnimation } from '../hooks/useSwipeAnimation';
-import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { Spacing, BorderRadius } from '../theme';
 import { User, RootStackParamList, FilterState } from '../types';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const STATUS_BAR_HEIGHT = Platform.OS === 'ios' ? 54 : 32;
 
 const DEFAULT_FILTERS: FilterState = {
   maxDistance: 50,
@@ -41,6 +44,8 @@ const activeFilterCount = (f: FilterState) =>
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, isDark } = useTheme();
+
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [matchedUser, setMatchedUser] = useState<User | null>(null);
   const [showMatch, setShowMatch] = useState(false);
@@ -48,6 +53,20 @@ export const HomeScreen: React.FC = () => {
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [toast, setToast] = useState<{ message: string; type: 'like' | 'nope' | 'match' } | null>(null);
+  const [promo, setPromo] = useState<PromoConfig | null>(null);
+  const swipeCountRef = useRef(0);
+
+  // Show a promo every ~4 swipes
+  const lastPromoIdRef = useRef<string | null>(null);
+  const maybeShowPromo = useCallback(() => {
+    swipeCountRef.current += 1;
+    if (swipeCountRef.current % 4 === 0 && !promo) {
+      const msgs = PROMO_MESSAGES.filter((p) => p.id !== lastPromoIdRef.current);
+      const pick = msgs[Math.floor(Math.random() * msgs.length)];
+      lastPromoIdRef.current = pick.id;
+      setTimeout(() => setPromo(pick), 800);
+    }
+  }, [promo]);
 
   const showToast = (message: string, type: 'like' | 'nope' | 'match') => {
     setToast({ message, type });
@@ -64,25 +83,31 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
-  const handleSwipeRight = () => {
+  const handleSwipeRight = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const swiped = users[users.length - 1];
-    setLikeCount((c) => c + 1);
-    setUsers((prev) => prev.slice(0, -1));
-    if (swiped) {
-      showToast(`Liked ${swiped.name.split(' ')[0]}!`, 'like');
-      triggerMatch(swiped);
-    }
-  };
+    setUsers((prev) => {
+      const swiped = prev[prev.length - 1];
+      if (swiped) {
+        showToast(`Liked ${swiped.name.split(' ')[0]}! ❤️`, 'like');
+        setLikeCount((c) => c + 1);
+        triggerMatch(swiped);
+      }
+      return prev.slice(0, -1);
+    });
+    maybeShowPromo();
+  }, [maybeShowPromo]);
 
-  const handleSwipeLeft = () => {
+  const handleSwipeLeft = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const swiped = users[users.length - 1];
-    setUsers((prev) => prev.slice(0, -1));
-    if (swiped) showToast(`Passed on ${swiped.name.split(' ')[0]}`, 'nope');
-  };
+    setUsers((prev) => {
+      const swiped = prev[prev.length - 1];
+      if (swiped) showToast(`Passed`, 'nope');
+      return prev.slice(0, -1);
+    });
+    maybeShowPromo();
+  }, [maybeShowPromo]);
 
-  const { position, panResponder, getCardStyle, getLikeOpacity, getNopeOpacity, getNextCardScale, forceSwipe } =
+  const { panResponder, getCardStyle, getLikeOpacity, getNopeOpacity, getNextCardScale, forceSwipe } =
     useSwipeAnimation({ onSwipeLeft: handleSwipeLeft, onSwipeRight: handleSwipeRight });
 
   const handleReset = () => {
@@ -96,11 +121,11 @@ export const HomeScreen: React.FC = () => {
     if (users.length === 0) {
       return (
         <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="emoticon-happy-outline" size={72} color={Colors.textMuted} />
+          <MaterialCommunityIcons name="emoticon-happy-outline" size={72} color="rgba(255,255,255,0.4)" />
           <Text style={styles.emptyTitle}>You've seen everyone!</Text>
           <Text style={styles.emptySubtitle}>Come back later or adjust your filters</Text>
           <TouchableOpacity style={styles.emptyResetBtn} onPress={handleReset}>
-            <Ionicons name="refresh" size={20} color={Colors.primary} />
+            <Ionicons name="refresh" size={18} color="#fff" />
             <Text style={styles.emptyResetText}>Start over</Text>
           </TouchableOpacity>
         </View>
@@ -132,13 +157,14 @@ export const HomeScreen: React.FC = () => {
           <Animated.View
             key={user.id}
             style={[
+              styles.card,
               styles.cardWrapper,
               isSecond
                 ? { transform: [{ scale: getNextCardScale() }] }
-                : { transform: [{ scale: 0.88 }] },
+                : { transform: [{ scale: 0.90 }] },
             ]}
           >
-            <SwipeCard user={user} isTop={false} style={styles.card} />
+            <SwipeCard user={user} isTop={false} style={StyleSheet.absoluteFill} />
           </Animated.View>
         );
       })
@@ -146,44 +172,29 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.cardBg }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* Full-screen cards area */}
-      <View style={styles.cardsContainer}>
+      {/* ── Full-screen card stack ── */}
+      <View style={styles.cardsArea}>
         {renderCards()}
 
-        {/* Glass overlay header */}
-        <View style={styles.glassHeader} pointerEvents="box-none">
-          <View style={styles.glassHeaderInner} pointerEvents="auto">
-            {/* Logo */}
-            <View style={styles.logoRow}>
-              <LinearGradient
-                colors={[Colors.primary, Colors.primaryDark]}
-                style={styles.logoMini}
-              >
-                <MaterialCommunityIcons name="lightning-bolt" size={16} color={Colors.white} />
-              </LinearGradient>
-              <Text style={styles.headerTitle}>Sportli</Text>
-            </View>
-
-            {/* Right controls */}
-            <View style={styles.headerRight}>
+        {/* Glass overlay: filter button + active chips */}
+        <View style={styles.overlay} pointerEvents="box-none">
+          {/* Top-right controls */}
+          <View style={[styles.topControls, { paddingTop: STATUS_BAR_HEIGHT }]} pointerEvents="auto">
+            <View style={styles.topRight}>
               {likeCount > 0 && (
-                <View style={styles.likeCounter}>
-                  <Ionicons name="heart" size={12} color={Colors.accent} />
-                  <Text style={styles.likeCountText}>{likeCount}</Text>
+                <View style={styles.likeChip}>
+                  <Ionicons name="heart" size={12} color="#fff" />
+                  <Text style={styles.likeChipText}>{likeCount}</Text>
                 </View>
               )}
               <TouchableOpacity
-                style={[styles.filterBtn, numActiveFilters > 0 && styles.filterBtnActive]}
+                style={[styles.glassBtn, numActiveFilters > 0 && styles.glassBtnActive]}
                 onPress={() => setShowFilter(true)}
               >
-                <Ionicons
-                  name="options-outline"
-                  size={19}
-                  color={numActiveFilters > 0 ? Colors.white : Colors.white}
-                />
+                <Ionicons name="options-outline" size={18} color="#fff" />
                 {numActiveFilters > 0 && (
                   <View style={styles.filterBadge}>
                     <Text style={styles.filterBadgeText}>{numActiveFilters}</Text>
@@ -191,53 +202,62 @@ export const HomeScreen: React.FC = () => {
                 )}
               </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Active filter chips */}
-          {numActiveFilters > 0 && (
-            <View style={styles.activeFiltersRow} pointerEvents="auto">
-              {filters.maxDistance < 50 && (
-                <View style={styles.filterChip}>
-                  <Ionicons name="location" size={11} color={Colors.primary} />
-                  <Text style={styles.filterChipText}>≤{filters.maxDistance}km</Text>
-                </View>
-              )}
-              {filters.city && (
-                <View style={styles.filterChip}>
-                  <Ionicons name="business" size={11} color={Colors.primary} />
-                  <Text style={styles.filterChipText}>{filters.city}</Text>
-                </View>
-              )}
-              {filters.selectedSports.length > 0 && (
-                <View style={styles.filterChip}>
-                  <Ionicons name="football" size={11} color={Colors.primary} />
-                  <Text style={styles.filterChipText}>
-                    {filters.selectedSports.length} sport{filters.selectedSports.length > 1 ? 's' : ''}
-                  </Text>
-                </View>
-              )}
-              {filters.skillLevel && (
-                <View style={styles.filterChip}>
-                  <Ionicons name="trophy" size={11} color={Colors.primary} />
-                  <Text style={styles.filterChipText}>{filters.skillLevel}</Text>
-                </View>
-              )}
-              <TouchableOpacity onPress={() => setFilters(DEFAULT_FILTERS)}>
-                <Text style={styles.clearFilters}>Clear</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            {/* Active filter chips row */}
+            {numActiveFilters > 0 && (
+              <View style={styles.filterChipsRow}>
+                {filters.maxDistance < 50 && (
+                  <View style={styles.chip}>
+                    <Ionicons name="location" size={10} color={colors.primary} />
+                    <Text style={styles.chipText}>≤{filters.maxDistance}km</Text>
+                  </View>
+                )}
+                {filters.city && (
+                  <View style={styles.chip}>
+                    <Ionicons name="business" size={10} color={colors.primary} />
+                    <Text style={styles.chipText}>{filters.city}</Text>
+                  </View>
+                )}
+                {filters.selectedSports.length > 0 && (
+                  <View style={styles.chip}>
+                    <Ionicons name="football" size={10} color={colors.primary} />
+                    <Text style={styles.chipText}>
+                      {filters.selectedSports.length} sport{filters.selectedSports.length > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                )}
+                {filters.skillLevel && (
+                  <View style={styles.chip}>
+                    <Ionicons name="trophy" size={10} color={colors.primary} />
+                    <Text style={styles.chipText}>{filters.skillLevel}</Text>
+                  </View>
+                )}
+                <TouchableOpacity onPress={() => setFilters(DEFAULT_FILTERS)}>
+                  <Text style={styles.clearFiltersText}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Toast */}
         {toast && <ToastNotification message={toast.message} type={toast.type} />}
+
+        {/* Promo notification */}
+        {promo && (
+          <PromoNotification
+            config={promo}
+            onDismiss={() => setPromo(null)}
+            onCta={() => navigation.navigate('Premium')}
+          />
+        )}
       </View>
 
-      {/* Action buttons */}
+      {/* ── Action buttons bar ── */}
       {users.length > 0 && (
-        <View style={styles.actions}>
+        <View style={[styles.actions, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
           <ActionButton variant="neutral" size="sm" onPress={() => {}}>
-            <Ionicons name="arrow-undo" size={20} color={Colors.secondary} />
+            <Ionicons name="arrow-undo" size={18} color={colors.secondary} />
           </ActionButton>
 
           <ActionButton
@@ -248,11 +268,11 @@ export const HomeScreen: React.FC = () => {
               forceSwipe('left');
             }}
           >
-            <Ionicons name="close" size={34} color={Colors.accent} />
+            <Ionicons name="close" size={32} color={colors.accent} />
           </ActionButton>
 
           <ActionButton variant="super" size="sm" onPress={() => {}}>
-            <Ionicons name="star" size={20} color={Colors.secondary} />
+            <Ionicons name="star" size={18} color={colors.secondary} />
           </ActionButton>
 
           <ActionButton
@@ -263,16 +283,16 @@ export const HomeScreen: React.FC = () => {
               forceSwipe('right');
             }}
           >
-            <Ionicons name="heart" size={32} color={Colors.primary} />
+            <Ionicons name="heart" size={30} color={colors.primary} />
           </ActionButton>
 
-          <ActionButton variant="neutral" size="sm" onPress={() => {}}>
-            <MaterialCommunityIcons name="lightning-bolt" size={20} color={Colors.primary} />
+          <ActionButton variant="neutral" size="sm" onPress={() => navigation.navigate('Premium')}>
+            <MaterialCommunityIcons name="lightning-bolt" size={18} color={colors.primary} />
           </ActionButton>
         </View>
       )}
 
-      {/* Match Modal */}
+      {/* ── Modals ── */}
       {matchedUser && (
         <MatchModal
           visible={showMatch}
@@ -283,7 +303,6 @@ export const HomeScreen: React.FC = () => {
         />
       )}
 
-      {/* Filter Modal */}
       <FilterModal
         visible={showFilter}
         current={filters}
@@ -294,97 +313,95 @@ export const HomeScreen: React.FC = () => {
   );
 };
 
-const STATUS_BAR_HEIGHT = Platform.OS === 'ios' ? 54 : 32;
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
-  cardsContainer: {
+  cardsArea: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1a1a2e',
   },
-  card: { position: 'absolute' },
-  cardWrapper: { position: 'absolute' },
 
-  // Glass header floating over cards
-  glassHeader: {
+  card: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    paddingTop: STATUS_BAR_HEIGHT,
+    width: Dimensions.get('window').width,
+    height: SCREEN_HEIGHT * 0.82,
+    borderRadius: 0,
+    overflow: 'hidden',
   },
-  glassHeaderInner: {
+
+  cardWrapper: {
+    borderRadius: 24,
+    width: Dimensions.get('window').width - 24,
+    overflow: 'hidden',
+  },
+
+  // Glass overlay
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+  },
+  topControls: {
+    paddingHorizontal: Spacing['2xl'],
+    paddingBottom: Spacing.sm,
+  },
+  topRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing['2xl'],
-    paddingVertical: Spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.32)',
+    justifyContent: 'flex-end',
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  logoMini: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    ...Typography.h3,
-    color: Colors.white,
-    letterSpacing: -0.5,
-    fontWeight: '800',
-  },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  likeCounter: {
+  likeChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,82,82,0.75)',
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: 4,
   },
-  likeCountText: { ...Typography.label, color: Colors.white, fontWeight: '700' },
-  filterBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+  likeChipText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  glassBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  filterBtnActive: { backgroundColor: Colors.primary },
+  glassBtnActive: {
+    backgroundColor: 'rgba(79,195,247,0.6)',
+    borderColor: 'rgba(79,195,247,0.8)',
+  },
   filterBadge: {
     position: 'absolute',
     top: -3,
     right: -3,
-    backgroundColor: Colors.accent,
-    borderRadius: BorderRadius.full,
     width: 16,
     height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FF5252',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(0,0,0,0.3)',
+    borderColor: 'rgba(0,0,0,0.4)',
   },
-  filterBadgeText: { fontSize: 9, color: Colors.white, fontWeight: '800' },
-
-  activeFiltersRow: {
+  filterBadgeText: { fontSize: 9, color: '#fff', fontWeight: '800' },
+  filterChipsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing['2xl'],
-    paddingVertical: Spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.25)',
     flexWrap: 'wrap',
+    gap: Spacing.xs,
+    alignItems: 'center',
   },
-  filterChip: {
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
@@ -393,8 +410,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
   },
-  filterChipText: { ...Typography.caption, color: Colors.primary, fontWeight: '600' },
-  clearFilters: { ...Typography.caption, color: 'rgba(255,255,255,0.75)', textDecorationLine: 'underline' },
+  chipText: { fontSize: 11, color: '#0288D1', fontWeight: '600' },
+  clearFiltersText: { fontSize: 11, color: 'rgba(255,255,255,0.75)', textDecorationLine: 'underline' },
 
   // Action buttons
   actions: {
@@ -403,26 +420,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.base,
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.base,
-    paddingBottom: Platform.OS === 'ios' ? 28 : Spacing.xl,
-    backgroundColor: Colors.white,
+    paddingTop: Spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 30 : Spacing.xl,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
 
   // Empty state
   emptyState: { alignItems: 'center', gap: Spacing.base, paddingHorizontal: Spacing['2xl'] },
-  emptyTitle: { ...Typography.h2, color: Colors.white, textAlign: 'center' },
-  emptySubtitle: { ...Typography.body, color: 'rgba(255,255,255,0.65)', textAlign: 'center' },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  emptySubtitle: { fontSize: 15, color: 'rgba(255,255,255,0.6)', textAlign: 'center' },
   emptyResetBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     marginTop: Spacing.sm,
-    backgroundColor: Colors.primary,
+    backgroundColor: 'rgba(79,195,247,0.8)',
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
   },
-  emptyResetText: { ...Typography.labelLarge, color: Colors.white },
+  emptyResetText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });

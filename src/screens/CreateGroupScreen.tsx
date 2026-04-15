@@ -46,11 +46,24 @@ const SPORT_GRADIENTS: Record<string, readonly [string, string]> = {
 export const CreateGroupScreen: React.FC<Props> = ({ navigation }) => {
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
+  const [selectedSports, setSelectedSports] = useState<Sport[]>([]);
   const [coverEmoji, setCoverEmoji] = useState('🏃');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [maxMembers, setMaxMembers] = useState('20');
   const [step, setStep] = useState<1 | 2 | 3>(1);
+
+  const toggleSport = (sport: Sport) => {
+    setSelectedSports((prev) => {
+      if (prev.find((s) => s.id === sport.id)) {
+        return prev.filter((s) => s.id !== sport.id);
+      }
+      const next = [...prev, sport];
+      // Update gradient/emoji based on primary (first) sport
+      const primary = next[0];
+      setCoverEmoji(COVER_EMOJIS[SPORTS.indexOf(primary)] ?? '🏃');
+      return next;
+    });
+  };
 
   const toggleMember = (id: string) => {
     setSelectedMembers((prev) =>
@@ -58,11 +71,12 @@ export const CreateGroupScreen: React.FC<Props> = ({ navigation }) => {
     );
   };
 
-  const gradient = selectedSport
-    ? (SPORT_GRADIENTS[selectedSport.id] ?? ['#4FC3F7', '#0288D1'])
+  const primarySport = selectedSports[0] ?? null;
+  const gradient = primarySport
+    ? (SPORT_GRADIENTS[primarySport.id] ?? ['#4FC3F7', '#0288D1'])
     : (['#4FC3F7', '#0288D1'] as const);
 
-  const canProceed1 = groupName.trim().length >= 3 && selectedSport !== null;
+  const canProceed1 = groupName.trim().length >= 3 && selectedSports.length > 0;
   const canCreate = canProceed1;
 
   const handleCreate = () => {
@@ -86,7 +100,9 @@ export const CreateGroupScreen: React.FC<Props> = ({ navigation }) => {
             {groupName.trim() || 'New Group'}
           </Text>
           <Text style={styles.headerSubtitle}>
-            {selectedSport ? selectedSport.name : 'Select a sport'}
+            {selectedSports.length === 0
+              ? 'Select sports'
+              : selectedSports.map((s) => s.emoji).join(' ')}
           </Text>
         </View>
         {/* Step indicator */}
@@ -151,18 +167,17 @@ export const CreateGroupScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Sport *</Text>
+              <Text style={styles.sectionTitle}>
+                Sports *{selectedSports.length > 0 ? ` (${selectedSports.length} selected)` : ''}
+              </Text>
               <View style={styles.sportsGrid}>
                 {SPORTS.map((sport) => {
-                  const selected = selectedSport?.id === sport.id;
+                  const selected = !!selectedSports.find((s) => s.id === sport.id);
                   return (
                     <TouchableOpacity
                       key={sport.id}
                       style={[styles.sportChip, selected && styles.sportChipActive]}
-                      onPress={() => {
-                        setSelectedSport(sport);
-                        setCoverEmoji(COVER_EMOJIS[SPORTS.indexOf(sport)] ?? '🏃');
-                      }}
+                      onPress={() => toggleSport(sport)}
                     >
                       <Text style={styles.sportEmoji}>{sport.emoji}</Text>
                       <Text style={[styles.sportName, selected && styles.sportNameActive]}>
@@ -270,8 +285,10 @@ export const CreateGroupScreen: React.FC<Props> = ({ navigation }) => {
               )}
 
               <View style={styles.reviewItem}>
-                <Text style={styles.reviewLabel}>Sport</Text>
-                <Text style={styles.reviewValue}>{selectedSport?.emoji} {selectedSport?.name}</Text>
+                <Text style={styles.reviewLabel}>Sports</Text>
+                <Text style={styles.reviewValue}>
+                  {selectedSports.map((s) => `${s.emoji} ${s.name}`).join(', ')}
+                </Text>
               </View>
               <View style={styles.reviewDivider} />
 
