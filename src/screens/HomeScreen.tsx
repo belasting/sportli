@@ -18,6 +18,7 @@ import { RootStackParamList } from '../types';
 import { SwipeCard } from '../components/SwipeCard';
 import { ActionButton } from '../components/ActionButton';
 import { MatchModal } from '../components/MatchModal';
+import { FilterModal, FilterState } from '../components/FilterModal';
 import { useSwipeAnimation } from '../hooks/useSwipeAnimation';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import { User } from '../types';
@@ -30,6 +31,12 @@ export const HomeScreen: React.FC = () => {
   const [matchedUser, setMatchedUser] = useState<User | null>(null);
   const [showMatch, setShowMatch] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [showFilter, setShowFilter] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+    maxDistance: 25,
+    selectedSports: [],
+    skillLevel: null,
+  });
   const noMoreAnim = useRef(new Animated.Value(0)).current;
 
   const triggerMatch = (user: User) => {
@@ -138,8 +145,13 @@ export const HomeScreen: React.FC = () => {
             <Ionicons name="heart" size={14} color={Colors.accent} />
             <Text style={styles.likeCountText}>{likeCount}</Text>
           </View>
-          <ActionButton variant="neutral" size="sm" onPress={() => {}}>
-            <Ionicons name="options-outline" size={20} color={Colors.textPrimary} />
+          <ActionButton variant="neutral" size="sm" onPress={() => setShowFilter(true)}>
+            <View style={{ position: 'relative' }}>
+              <Ionicons name="options-outline" size={20} color={Colors.textPrimary} />
+              {(activeFilters.selectedSports.length > 0 || activeFilters.skillLevel || activeFilters.maxDistance !== 25) && (
+                <View style={styles.filterDot} />
+              )}
+            </View>
           </ActionButton>
         </View>
       </View>
@@ -192,6 +204,17 @@ export const HomeScreen: React.FC = () => {
           </ActionButton>
         </View>
       )}
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={showFilter}
+        initial={activeFilters}
+        onClose={() => setShowFilter(false)}
+        onApply={(filters) => {
+          setActiveFilters(filters);
+          setShowFilter(false);
+        }}
+      />
 
       {/* Match Modal */}
       {matchedUser && (
@@ -306,5 +329,16 @@ const styles = StyleSheet.create({
   },
   emptyAction: {
     marginTop: Spacing.md,
+  },
+  filterDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.accent,
+    borderWidth: 1.5,
+    borderColor: Colors.white,
   },
 });

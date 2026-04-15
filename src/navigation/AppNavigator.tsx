@@ -6,6 +6,7 @@ import { TabNavigator } from './TabNavigator';
 import { ChatConversationScreen } from '../screens/ChatConversationScreen';
 import { UserProfileScreen } from '../screens/UserProfileScreen';
 import { PremiumScreen } from '../screens/PremiumScreen';
+import { GroupChatScreen } from '../screens/GroupChatScreen';
 import { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,6 +45,11 @@ export const AppNavigator: React.FC = () => {
           name="Premium"
           component={PremiumScreen}
           options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="GroupChatConversation"
+          component={GroupChatScreen}
+          options={{ animation: 'slide_from_right' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

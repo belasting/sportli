@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ChatListScreen } from '../screens/ChatListScreen';
+import { GroupChatListScreen } from '../screens/GroupChatListScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { MainTabParamList } from '../types';
 import { Colors, Typography } from '../theme';
@@ -86,8 +87,8 @@ export const TabNavigator: React.FC = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Discover',
-          tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
+          tabBarLabel: 'Swipe',
+          tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -101,11 +102,19 @@ export const TabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
+        name="Group"
+        component={GroupChatListScreen}
+        options={{
+          tabBarLabel: 'Groups',
+          tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="person-circle" focused={focused} />,
         }}
       />
     </Tab.Navigator>
