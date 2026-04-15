@@ -10,10 +10,13 @@ import {
   Platform,
   Image,
   StatusBar,
+  Modal,
+  Animated,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList, Message } from '../types';
 import { MessageBubble } from '../components/MessageBubble';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
@@ -32,12 +35,47 @@ const formatMessageDate = (date: Date): string => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+type AttachOption = {
+  icon: string;
+  label: string;
+  sublabel: string;
+  iconBg: string;
+  iconLib: 'ion' | 'mci';
+};
+
+const ATTACH_OPTIONS: AttachOption[] = [
+  { icon: 'camera', label: 'Camera', sublabel: 'Take a photo or video', iconBg: Colors.primary, iconLib: 'ion' },
+  { icon: 'image', label: 'Photo Library', sublabel: 'Share from your gallery', iconBg: '#9B59B6', iconLib: 'ion' },
+  { icon: 'location', label: 'Location', sublabel: 'Send your current spot', iconBg: Colors.accent, iconLib: 'ion' },
+  { icon: 'dumbbell', label: 'Workout Plan', sublabel: 'Plan a session together', iconBg: Colors.secondary, iconLib: 'mci' },
+];
+
 export const ChatConversationScreen: React.FC<Props> = ({ navigation, route }) => {
   const { conversation } = route.params;
   const [messages, setMessages] = useState<Message[]>(conversation.messages);
   const [text, setText] = useState('');
+  const [attachVisible, setAttachVisible] = useState(false);
+  const sheetAnim = useRef(new Animated.Value(300)).current;
   const flatListRef = useRef<FlatList>(null);
   const { matchedUser } = conversation;
+
+  const openAttach = () => {
+    setAttachVisible(true);
+    Animated.spring(sheetAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 11,
+    }).start();
+  };
+
+  const closeAttach = () => {
+    Animated.timing(sheetAnim, {
+      toValue: 300,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => setAttachVisible(false));
+  };
 
   const sendMessage = () => {
     if (!text.trim()) return;
@@ -75,25 +113,25 @@ export const ChatConversationScreen: React.FC<Props> = ({ navigation, route }) =
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.userInfo}
           onPress={() => navigation.navigate('UserProfile', { user: matchedUser })}
+          activeOpacity={0.75}
         >
           <View style={styles.avatarWrapper}>
             <Image source={{ uri: matchedUser.photos[0] }} style={styles.avatar} />
             <View style={styles.onlineDot} />
           </View>
-          <View>
+          <View style={styles.userMeta}>
             <View style={styles.nameRow}>
               <Text style={styles.userName}>{matchedUser.name}</Text>
               {matchedUser.isVerified && (
@@ -101,26 +139,34 @@ export const ChatConversationScreen: React.FC<Props> = ({ navigation, route }) =
               )}
             </View>
             <Text style={styles.statusText}>
-              {matchedUser.sports[0]?.emoji} {matchedUser.sports[0]?.name} player · Active now
+              {matchedUser.sports[0]?.emoji} Active now
             </Text>
           </View>
         </TouchableOpacity>
 
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.headerActionBtn}>
-            <Ionicons name="videocam-outline" size={22} color={Colors.primary} />
+            <Ionicons name="videocam-outline" size={21} color={Colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerActionBtn}>
-            <Ionicons name="ellipsis-horizontal" size={22} color={Colors.textSecondary} />
+            <Ionicons name="ellipsis-horizontal" size={21} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Workout plan banner */}
-      <TouchableOpacity style={styles.workoutBanner}>
-        <MaterialCommunityIcons name="dumbbell" size={18} color={Colors.secondary} />
+      <TouchableOpacity style={styles.workoutBanner} activeOpacity={0.8}>
+        <LinearGradient
+          colors={[Colors.secondaryLight, '#E8F5E9']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <MaterialCommunityIcons name="dumbbell" size={17} color={Colors.secondary} />
         <Text style={styles.workoutBannerText}>Plan a workout together</Text>
-        <Ionicons name="arrow-forward" size={16} color={Colors.secondary} />
+        <View style={styles.workoutBannerArrow}>
+          <Ionicons name="arrow-forward" size={14} color={Colors.secondary} />
+        </View>
       </TouchableOpacity>
 
       {/* Messages */}
@@ -134,8 +180,8 @@ export const ChatConversationScreen: React.FC<Props> = ({ navigation, route }) =
         onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
       />
 
-      {/* Emoji suggestions */}
-      <View style={styles.emojiSuggestions}>
+      {/* Emoji quick-replies */}
+      <View style={styles.emojiRow}>
         {['🏀', '⚽', '💪', '🔥', '👍', '😄'].map((emoji) => (
           <TouchableOpacity
             key={emoji}
@@ -149,8 +195,13 @@ export const ChatConversationScreen: React.FC<Props> = ({ navigation, route }) =
 
       {/* Input bar */}
       <View style={styles.inputBar}>
-        <TouchableOpacity style={styles.attachBtn}>
-          <Ionicons name="add-circle-outline" size={26} color={Colors.primary} />
+        <TouchableOpacity style={styles.attachBtn} onPress={openAttach} activeOpacity={0.7}>
+          <LinearGradient
+            colors={[Colors.primary, Colors.primaryDark]}
+            style={styles.attachBtnGrad}
+          >
+            <Ionicons name="add" size={22} color={Colors.white} />
+          </LinearGradient>
         </TouchableOpacity>
 
         <View style={styles.inputWrapper}>
@@ -169,14 +220,55 @@ export const ChatConversationScreen: React.FC<Props> = ({ navigation, route }) =
           style={[styles.sendBtn, text.trim() ? styles.sendBtnActive : null]}
           onPress={sendMessage}
           disabled={!text.trim()}
+          activeOpacity={0.8}
         >
           <Ionicons
             name={text.trim() ? 'send' : 'mic-outline'}
-            size={20}
+            size={19}
             color={text.trim() ? Colors.white : Colors.textMuted}
           />
         </TouchableOpacity>
       </View>
+
+      {/* Attach sheet */}
+      <Modal
+        visible={attachVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeAttach}
+      >
+        <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={closeAttach} />
+        <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetAnim }] }]}>
+          {/* Handle */}
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>Share something</Text>
+
+          <View style={styles.sheetGrid}>
+            {ATTACH_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.label}
+                style={styles.sheetOption}
+                onPress={closeAttach}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.sheetOptionIcon, { backgroundColor: opt.iconBg }]}>
+                  {opt.iconLib === 'ion' ? (
+                    <Ionicons name={opt.icon as any} size={24} color={Colors.white} />
+                  ) : (
+                    <MaterialCommunityIcons name={opt.icon as any} size={24} color={Colors.white} />
+                  )}
+                </View>
+                <Text style={styles.sheetOptionLabel}>{opt.label}</Text>
+                <Text style={styles.sheetOptionSub}>{opt.sublabel}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity style={styles.sheetCancel} onPress={closeAttach} activeOpacity={0.7}>
+            <Text style={styles.sheetCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -208,13 +300,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 1,
     right: 1,
-    width: 12,
-    height: 12,
+    width: 11,
+    height: 11,
     borderRadius: 6,
     backgroundColor: Colors.success,
     borderWidth: 2,
     borderColor: Colors.white,
   },
+  userMeta: { gap: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   userName: { ...Typography.h4, color: Colors.textPrimary },
   statusText: { ...Typography.caption, color: Colors.textSecondary },
@@ -231,13 +324,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.secondaryLight,
     paddingHorizontal: Spacing['2xl'],
-    paddingVertical: Spacing.md,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    overflow: 'hidden',
   },
-  workoutBannerText: { flex: 1, ...Typography.label, color: Colors.secondary },
+  workoutBannerText: { flex: 1, ...Typography.label, color: Colors.secondary, fontWeight: '600' },
+  workoutBannerArrow: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.secondaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   messagesList: {
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.base,
@@ -255,23 +356,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 3,
   },
-  emojiSuggestions: {
+  // Emoji quick-replies
+  emojiRow: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
+    gap: Spacing.xs,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
   emojiBtn: {
-    width: 36,
-    height: 36,
+    flex: 1,
+    height: 34,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: { fontSize: 18 },
+  emoji: { fontSize: 17 },
+  // Input bar
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -280,8 +383,15 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
     paddingBottom: Platform.OS === 'ios' ? 28 : Spacing.base,
     backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   attachBtn: {
+    borderRadius: 22,
+    overflow: 'hidden',
+    ...Shadow.sm,
+  },
+  attachBtnGrad: {
     width: 44,
     height: 44,
     alignItems: 'center',
@@ -292,15 +402,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceAlt,
     borderRadius: BorderRadius['2xl'],
     paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
     maxHeight: 120,
     borderWidth: 1.5,
     borderColor: Colors.border,
   },
   input: {
-    ...Typography.bodyLarge,
+    ...Typography.body,
     color: Colors.textPrimary,
     minHeight: 24,
+    padding: 0,
   },
   sendBtn: {
     width: 44,
@@ -309,8 +420,68 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
   },
   sendBtnActive: {
     backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
+  // Attach sheet
+  sheetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: Spacing.md,
+    paddingHorizontal: Spacing['2xl'],
+    paddingBottom: Platform.OS === 'ios' ? 36 : Spacing['2xl'],
+    ...Shadow.lg,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
+  },
+  sheetTitle: { ...Typography.h4, color: Colors.textPrimary, marginBottom: Spacing.lg },
+  sheetGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  sheetOption: {
+    width: '46%',
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.base,
+    gap: Spacing.sm,
+    ...Shadow.sm,
+  },
+  sheetOptionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetOptionLabel: { ...Typography.labelLarge, color: Colors.textPrimary },
+  sheetOptionSub: { ...Typography.caption, color: Colors.textMuted },
+  sheetCancel: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  sheetCancelText: { ...Typography.label, color: Colors.textSecondary, fontWeight: '700' },
 });

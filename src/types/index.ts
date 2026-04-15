@@ -100,6 +100,8 @@ export type RootStackParamList = {
   UserProfile: { user: User; fromMatch?: boolean };
   Premium: undefined;
   GroupChatConversation: { group: GroupChat };
+  Settings: undefined;
+  EditProfile: undefined;
 };
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────

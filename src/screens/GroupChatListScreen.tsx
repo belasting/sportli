@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Platform,
   StatusBar,
   TextInput,
+  Modal,
+  Animated,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -123,12 +126,58 @@ const formatTime = (date: Date): string => {
 export const GroupChatListScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const [search, setSearch] = useState('');
+  const [groups, setGroups] = useState<GroupChat[]>(MOCK_GROUPS);
 
-  const filtered = MOCK_GROUPS.filter((g) =>
+  // Create group modal
+  const [createVisible, setCreateVisible] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupSport, setNewGroupSport] = useState<string>(SPORTS[0].id);
+  const sheetAnim = useRef(new Animated.Value(500)).current;
+
+  const openCreate = () => {
+    setCreateVisible(true);
+    Animated.spring(sheetAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 11,
+    }).start();
+  };
+
+  const closeCreate = () => {
+    Animated.timing(sheetAnim, {
+      toValue: 500,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      setCreateVisible(false);
+      setNewGroupName('');
+      setNewGroupSport(SPORTS[0].id);
+    });
+  };
+
+  const handleCreate = () => {
+    if (!newGroupName.trim()) return;
+    const sport = SPORTS.find((s) => s.id === newGroupSport) ?? SPORTS[0];
+    const newGroup: GroupChat = {
+      id: `g${Date.now()}`,
+      name: newGroupName.trim(),
+      sport,
+      members: [
+        { id: 'me', name: 'Sam Parker', photos: ['https://images.unsplash.com/photo-1544723795-3fb6469f5b39?w=200&q=80'] },
+      ],
+      messages: [],
+      unreadCount: 0,
+    };
+    setGroups((prev) => [newGroup, ...prev]);
+    closeCreate();
+  };
+
+  const filtered = groups.filter((g) =>
     g.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalUnread = MOCK_GROUPS.reduce((acc, g) => acc + g.unreadCount, 0);
+  const totalUnread = groups.reduce((acc, g) => acc + g.unreadCount, 0);
 
   return (
     <View style={styles.container}>
@@ -151,7 +200,7 @@ export const GroupChatListScreen: React.FC = () => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.createBtn} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.createBtn} activeOpacity={0.8} onPress={openCreate}>
           <LinearGradient
             colors={[Colors.primary, Colors.primaryDark]}
             style={styles.createBtnGradient}
@@ -286,6 +335,95 @@ export const GroupChatListScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* ── Create Group Sheet ─────────────────────────── */}
+      <Modal
+        visible={createVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeCreate}
+      >
+        <KeyboardAvoidingView
+          style={StyleSheet.absoluteFill}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={closeCreate} />
+          <Animated.View style={[styles.createSheet, { transform: [{ translateY: sheetAnim }] }]}>
+            {/* Handle */}
+            <View style={styles.sheetHandle} />
+
+            {/* Title row */}
+            <View style={styles.createSheetHeader}>
+              <Text style={styles.createSheetTitle}>Create Group</Text>
+              <TouchableOpacity onPress={closeCreate} style={styles.sheetCloseBtn}>
+                <Ionicons name="close" size={20} color={Colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Group name */}
+            <View style={styles.createField}>
+              <Text style={styles.createFieldLabel}>Group Name</Text>
+              <View style={styles.createFieldInput}>
+                <Ionicons name="people-outline" size={18} color={Colors.textMuted} />
+                <TextInput
+                  style={styles.createInput}
+                  value={newGroupName}
+                  onChangeText={setNewGroupName}
+                  placeholder="e.g. Saturday Soccer Crew"
+                  placeholderTextColor={Colors.textMuted}
+                  maxLength={40}
+                  autoFocus
+                />
+              </View>
+            </View>
+
+            {/* Sport picker */}
+            <View style={styles.createField}>
+              <Text style={styles.createFieldLabel}>Sport</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.sportScroll}
+              >
+                {SPORTS.map((sport) => {
+                  const active = newGroupSport === sport.id;
+                  return (
+                    <TouchableOpacity
+                      key={sport.id}
+                      onPress={() => setNewGroupSport(sport.id)}
+                      style={[styles.sportChip, active && styles.sportChipActive]}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.sportChipEmoji}>{sport.emoji}</Text>
+                      <Text style={[styles.sportChipText, active && styles.sportChipTextActive]}>
+                        {sport.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* Create button */}
+            <TouchableOpacity
+              onPress={handleCreate}
+              activeOpacity={0.85}
+              disabled={!newGroupName.trim()}
+              style={[styles.createBtn2, !newGroupName.trim() && styles.createBtn2Disabled]}
+            >
+              <LinearGradient
+                colors={newGroupName.trim() ? [Colors.primary, Colors.primaryDark] : [Colors.border, Colors.border]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.createBtn2Grad}
+              >
+                <Ionicons name="people" size={18} color={Colors.white} />
+                <Text style={styles.createBtn2Text}>Create Group</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -464,4 +602,94 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { ...Typography.h3, color: Colors.textPrimary },
   emptySubtitle: { ...Typography.body, color: Colors.textSecondary, textAlign: 'center' },
+
+  // Create group sheet
+  sheetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  createSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: Spacing.md,
+    paddingHorizontal: Spacing['2xl'],
+    paddingBottom: Platform.OS === 'ios' ? 40 : Spacing['2xl'],
+    ...Shadow.lg,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
+  },
+  createSheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.lg,
+  },
+  createSheetTitle: { ...Typography.h3, color: Colors.textPrimary },
+  sheetCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createField: { gap: Spacing.sm, marginBottom: Spacing.lg },
+  createFieldLabel: { ...Typography.label, color: Colors.textSecondary },
+  createFieldInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  createInput: {
+    flex: 1,
+    ...Typography.body,
+    color: Colors.textPrimary,
+    padding: 0,
+  },
+  sportScroll: { gap: Spacing.sm, paddingVertical: 2 },
+  sportChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.surfaceAlt,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  sportChipActive: {
+    backgroundColor: Colors.primaryLight,
+    borderColor: Colors.primary,
+  },
+  sportChipEmoji: { fontSize: 14 },
+  sportChipText: { ...Typography.label, color: Colors.textSecondary, fontWeight: '600' },
+  sportChipTextActive: { color: Colors.primaryDark },
+  createBtn2: { borderRadius: BorderRadius.xl, overflow: 'hidden', ...Shadow.sm },
+  createBtn2Disabled: { opacity: 0.5 },
+  createBtn2Grad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.base,
+  },
+  createBtn2Text: { ...Typography.label, color: Colors.white, fontWeight: '700', fontSize: 16 },
 });

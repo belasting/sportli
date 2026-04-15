@@ -24,7 +24,7 @@ type Props = {
 
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [name, setName] = useState('');
-  const [age, setAge] = useState('');
+  const [dob, setDob] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -104,18 +104,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               icon="person-outline"
               autoCapitalize="words"
             />
-            <FocusableInput
-              label="Age"
-              value={age}
-              onChangeText={(v) => {
-                const n = v.replace(/[^0-9]/g, '');
-                if (n === '' || (parseInt(n) >= 13 && parseInt(n) <= 100)) setAge(n);
-                else if (n.length <= 2) setAge(n);
-              }}
-              placeholder="25"
-              icon="calendar-outline"
-              keyboardType="number-pad"
-            />
+            <DOBInput value={dob} onChange={setDob} />
             <FocusableInput
               label="Email"
               value={email}
@@ -191,6 +180,66 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   );
 };
 
+// ── Date of Birth input ──────────────────────────────────────────────────────
+// Formats input as DD/MM/YYYY with auto-slash insertion and age validation.
+const formatDOB = (raw: string, prev: string): string => {
+  // Strip non-digits
+  const digits = raw.replace(/\D/g, '');
+  // Limit to 8 digits (DDMMYYYY)
+  const d = digits.slice(0, 8);
+  if (d.length <= 2) return d;
+  if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`;
+  return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
+};
+
+const isDOBValid = (dob: string): boolean => {
+  if (dob.length !== 10) return false;
+  const [dd, mm, yyyy] = dob.split('/').map(Number);
+  if (!dd || !mm || !yyyy) return false;
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return false;
+  const birth = new Date(yyyy, mm - 1, dd);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const mDiff = today.getMonth() - birth.getMonth();
+  if (mDiff < 0 || (mDiff === 0 && today.getDate() < birth.getDate())) age--;
+  return age >= 13 && age <= 100;
+};
+
+const DOBInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
+  const [focused, setFocused] = useState(false);
+  const isValid = value.length === 10 ? isDOBValid(value) : true;
+
+  return (
+    <View style={fi.wrapper}>
+      <Text style={fi.label}>Date of Birth</Text>
+      <View style={[fi.field, focused && fi.fieldFocused, !isValid && fi.fieldError]}>
+        <Ionicons name="calendar-outline" size={18} color={focused ? Colors.primary : Colors.textMuted} />
+        <TextInput
+          style={fi.input}
+          value={value}
+          onChangeText={(raw) => onChange(formatDOB(raw, value))}
+          placeholder="DD/MM/YYYY"
+          placeholderTextColor={Colors.textMuted}
+          keyboardType="number-pad"
+          maxLength={10}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+        {value.length === 10 && (
+          <Ionicons
+            name={isValid ? 'checkmark-circle' : 'alert-circle'}
+            size={18}
+            color={isValid ? Colors.success : Colors.accent}
+          />
+        )}
+      </View>
+      {!isValid && value.length === 10 && (
+        <Text style={fi.errorText}>Must be between 13 and 100 years old</Text>
+      )}
+    </View>
+  );
+};
+
 const FocusableInput: React.FC<{
   label: string;
   value: string;
@@ -244,10 +293,19 @@ const fi = StyleSheet.create({
     borderColor: Colors.primary,
     backgroundColor: Colors.primaryLight,
   },
+  fieldError: {
+    borderColor: Colors.accent,
+    backgroundColor: '#FFF5F5',
+  },
   input: {
     flex: 1,
     ...Typography.bodyLarge,
     color: Colors.textPrimary,
+  },
+  errorText: {
+    ...Typography.caption,
+    color: Colors.accent,
+    marginTop: -2,
   },
 });
 

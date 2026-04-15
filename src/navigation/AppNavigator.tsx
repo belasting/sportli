@@ -7,6 +7,8 @@ import { ChatConversationScreen } from '../screens/ChatConversationScreen';
 import { UserProfileScreen } from '../screens/UserProfileScreen';
 import { PremiumScreen } from '../screens/PremiumScreen';
 import { GroupChatScreen } from '../screens/GroupChatScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -49,6 +51,16 @@ export const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="GroupChatConversation"
           component={GroupChatScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="EditProfile"
+          component={EditProfileScreen}
           options={{ animation: 'slide_from_right' }}
         />
       </Stack.Navigator>
