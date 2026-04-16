@@ -128,10 +128,10 @@ export const GroupChatListScreen: React.FC = () => {
   const [search, setSearch] = useState('');
   const [groups, setGroups] = useState<GroupChat[]>(MOCK_GROUPS);
 
-  // Create group modal
+  // Create group modal — now supports multi-sport selection
   const [createVisible, setCreateVisible] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupSport, setNewGroupSport] = useState<string>(SPORTS[0].id);
+  const [newGroupSports, setNewGroupSports] = useState<string[]>([]);
   const sheetAnim = useRef(new Animated.Value(500)).current;
 
   const openCreate = () => {
@@ -152,13 +152,21 @@ export const GroupChatListScreen: React.FC = () => {
     }).start(() => {
       setCreateVisible(false);
       setNewGroupName('');
-      setNewGroupSport(SPORTS[0].id);
+      setNewGroupSports([]);
     });
+  };
+
+  const toggleNewSport = (id: string) => {
+    setNewGroupSports((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
   };
 
   const handleCreate = () => {
     if (!newGroupName.trim()) return;
-    const sport = SPORTS.find((s) => s.id === newGroupSport) ?? SPORTS[0];
+    // Use first selected sport as primary (or Basketball as fallback)
+    const primarySportId = newGroupSports[0];
+    const sport = SPORTS.find((s) => s.id === primarySportId) ?? SPORTS[0];
     const newGroup: GroupChat = {
       id: `g${Date.now()}`,
       name: newGroupName.trim(),
@@ -377,20 +385,25 @@ export const GroupChatListScreen: React.FC = () => {
               </View>
             </View>
 
-            {/* Sport picker */}
+            {/* Sport picker — multi-select */}
             <View style={styles.createField}>
-              <Text style={styles.createFieldLabel}>Sport</Text>
+              <View style={styles.createFieldLabelRow}>
+                <Text style={styles.createFieldLabel}>Sports</Text>
+                {newGroupSports.length > 0 && (
+                  <Text style={styles.createFieldCount}>{newGroupSports.length} selected</Text>
+                )}
+              </View>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.sportScroll}
               >
                 {SPORTS.map((sport) => {
-                  const active = newGroupSport === sport.id;
+                  const active = newGroupSports.includes(sport.id);
                   return (
                     <TouchableOpacity
                       key={sport.id}
-                      onPress={() => setNewGroupSport(sport.id)}
+                      onPress={() => toggleNewSport(sport.id)}
                       style={[styles.sportChip, active && styles.sportChipActive]}
                       activeOpacity={0.7}
                     >
@@ -398,13 +411,14 @@ export const GroupChatListScreen: React.FC = () => {
                       <Text style={[styles.sportChipText, active && styles.sportChipTextActive]}>
                         {sport.name}
                       </Text>
+                      {active && <Ionicons name="checkmark-circle" size={13} color={Colors.primary} />}
                     </TouchableOpacity>
                   );
                 })}
               </ScrollView>
             </View>
 
-            {/* Create button */}
+            {/* Create button — enabled when name filled (sports optional) */}
             <TouchableOpacity
               onPress={handleCreate}
               activeOpacity={0.85}
@@ -645,7 +659,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   createField: { gap: Spacing.sm, marginBottom: Spacing.lg },
+  createFieldLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   createFieldLabel: { ...Typography.label, color: Colors.textSecondary },
+  createFieldCount: { ...Typography.caption, color: Colors.primary, fontWeight: '700' },
   createFieldInput: {
     flexDirection: 'row',
     alignItems: 'center',

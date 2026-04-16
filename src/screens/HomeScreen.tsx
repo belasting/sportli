@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { RootStackParamList } from '../types';
 import { SwipeCard, CARD_WIDTH, CARD_HEIGHT } from '../components/SwipeCard';
 import { ActionButton } from '../components/ActionButton';
 import { MatchModal } from '../components/MatchModal';
-import { FilterModal, FilterState } from '../components/FilterModal';
+import { FilterModal, FilterState, DEFAULT_FILTER_STATE } from '../components/FilterModal';
 import { ToastNotification, ToastType } from '../components/ToastNotification';
 import { useSwipeAnimation } from '../hooks/useSwipeAnimation';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
@@ -34,14 +34,8 @@ export const HomeScreen: React.FC = () => {
   const [showMatch, setShowMatch] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [showFilter, setShowFilter] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<FilterState>({
-    maxDistance: 25,
-    selectedSports: [],
-    skillLevel: null,
-    city: '',
-  });
+  const [activeFilters, setActiveFilters] = useState<FilterState>(DEFAULT_FILTER_STATE);
 
-  // Toast notification state
   const [toast, setToast] = useState<{
     visible: boolean;
     type: ToastType;
@@ -54,7 +48,6 @@ export const HomeScreen: React.FC = () => {
       setMatchedUser(user);
       setTimeout(() => setShowMatch(true), 300);
     } else {
-      // Show a "like" toast for non-matches
       setToast({ visible: true, type: 'like', userName: user.name, userPhoto: user.photos[0] });
     }
   };
@@ -83,8 +76,11 @@ export const HomeScreen: React.FC = () => {
   const hasActiveFilters =
     activeFilters.selectedSports.length > 0 ||
     activeFilters.skillLevel !== null ||
-    activeFilters.maxDistance !== 25 ||
-    !!activeFilters.city;
+    activeFilters.maxDistance !== DEFAULT_FILTER_STATE.maxDistance ||
+    !!activeFilters.city ||
+    activeFilters.gender !== 'all' ||
+    activeFilters.ageMin !== DEFAULT_FILTER_STATE.ageMin ||
+    activeFilters.ageMax !== DEFAULT_FILTER_STATE.ageMax;
 
   const renderCards = () => {
     if (users.length === 0) {
@@ -146,7 +142,7 @@ export const HomeScreen: React.FC = () => {
       <View style={styles.cardsArea}>
         {renderCards()}
 
-        {/* Floating top overlay — title + filter button */}
+        {/* Floating top overlay — like counter + filter button only (no logo) */}
         <View style={styles.topOverlay} pointerEvents="box-none">
           {/* Like counter pill */}
           <View style={styles.likeCountPill}>
@@ -154,8 +150,8 @@ export const HomeScreen: React.FC = () => {
             <Text style={styles.likeCountText}>{likeCount}</Text>
           </View>
 
-          {/* App name */}
-          <Text style={styles.floatingTitle}>sportli</Text>
+          {/* Spacer */}
+          <View style={{ flex: 1 }} />
 
           {/* Glass filter button */}
           <TouchableOpacity
@@ -176,12 +172,10 @@ export const HomeScreen: React.FC = () => {
       {/* Action buttons */}
       {users.length > 0 && (
         <View style={styles.actionsBar}>
-          {/* Undo */}
           <ActionButton variant="neutral" size="sm" onPress={() => {}}>
             <Ionicons name="arrow-undo" size={20} color={Colors.secondary} />
           </ActionButton>
 
-          {/* Nope */}
           <ActionButton
             variant="nope"
             size="lg"
@@ -193,12 +187,10 @@ export const HomeScreen: React.FC = () => {
             <Ionicons name="close" size={34} color={Colors.white} />
           </ActionButton>
 
-          {/* Super Like */}
           <ActionButton variant="super" size="sm" onPress={() => {}}>
             <Ionicons name="star" size={20} color={Colors.white} />
           </ActionButton>
 
-          {/* Like */}
           <ActionButton
             variant="like"
             size="lg"
@@ -210,14 +202,12 @@ export const HomeScreen: React.FC = () => {
             <Ionicons name="heart" size={30} color={Colors.white} />
           </ActionButton>
 
-          {/* Boost */}
           <ActionButton variant="neutral" size="sm" onPress={() => {}}>
             <MaterialCommunityIcons name="lightning-bolt" size={20} color={Colors.primary} />
           </ActionButton>
         </View>
       )}
 
-      {/* Filter Modal */}
       <FilterModal
         visible={showFilter}
         initial={activeFilters}
@@ -228,24 +218,16 @@ export const HomeScreen: React.FC = () => {
         }}
       />
 
-      {/* Match Modal */}
       {matchedUser && (
         <MatchModal
           visible={showMatch}
           currentUser={CURRENT_USER}
           matchedUser={matchedUser}
-          onSendMessage={() => {
-            setShowMatch(false);
-            setMatchedUser(null);
-          }}
-          onKeepSwiping={() => {
-            setShowMatch(false);
-            setMatchedUser(null);
-          }}
+          onSendMessage={() => { setShowMatch(false); setMatchedUser(null); }}
+          onKeepSwiping={() => { setShowMatch(false); setMatchedUser(null); }}
         />
       )}
 
-      {/* Toast Notification */}
       <ToastNotification
         visible={toast.visible}
         type={toast.type}
@@ -258,25 +240,11 @@ export const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F1117',
-  },
+  container: { flex: 1, backgroundColor: '#0F1117' },
+  cardsArea: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  card: { position: 'absolute' },
+  cardWrapper: { position: 'absolute' },
 
-  // Cards area — takes all space above action bar
-  cardsArea: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: {
-    position: 'absolute',
-  },
-  cardWrapper: {
-    position: 'absolute',
-  },
-
-  // Floating top overlay
   topOverlay: {
     position: 'absolute',
     top: SAFE_TOP,
@@ -284,29 +252,19 @@ const styles = StyleSheet.create({
     right: Spacing['2xl'],
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     zIndex: 10,
   },
   likeCountPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 5,
     ...Shadow.sm,
   },
   likeCountText: { ...Typography.caption, color: Colors.accent, fontWeight: '800' },
-  floatingTitle: {
-    ...Typography.h3,
-    color: Colors.white,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
   glassBtn: {
     backgroundColor: 'rgba(255,255,255,0.88)',
     borderRadius: BorderRadius.lg,
@@ -319,10 +277,7 @@ const styles = StyleSheet.create({
     ...Shadow.sm,
     position: 'relative',
   },
-  glassBtnActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
+  glassBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   filterActiveDot: {
     position: 'absolute',
     top: 5,
@@ -335,7 +290,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.white,
   },
 
-  // Action buttons bar
   actionsBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -347,7 +301,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F1117',
   },
 
-  // Empty state
   emptyState: {
     alignItems: 'center',
     gap: Spacing.md,

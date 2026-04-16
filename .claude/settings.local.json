@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(gh pr create --title 'feat: Group Chats, Filter system, Swipe tab rename, age field & UI polish' --base main --body ':*)",
+      "Bash(where gh:*)",
+      "Bash(winget list:*)"
+    ]
+  }
+}

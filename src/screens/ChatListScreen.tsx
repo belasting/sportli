@@ -10,13 +10,13 @@ import {
   TextInput,
   StatusBar,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MOCK_CONVERSATIONS } from '../data/mockChats';
 import { Conversation, RootStackParamList } from '../types';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Typography, Spacing, BorderRadius } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,6 +30,7 @@ const formatTime = (date: Date): string => {
 
 export const ChatListScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
+  const { isDark, colors } = useTheme();
   const [search, setSearch] = useState('');
 
   const filtered = MOCK_CONVERSATIONS.filter((c) =>
@@ -38,62 +39,68 @@ export const ChatListScreen: React.FC = () => {
 
   const totalUnread = MOCK_CONVERSATIONS.reduce((acc, c) => acc + c.unreadCount, 0);
 
+  const bg = isDark ? '#000' : '#fff';
+  const cardBg = isDark ? '#1C1C1E' : '#fff';
+  const searchBg = isDark ? '#1C1C1E' : '#F2F2F7';
+  const separatorColor = isDark ? '#38383A' : '#F2F2F7';
+
   const renderItem = ({ item }: { item: Conversation }) => {
     const lastMsg = item.messages[item.messages.length - 1];
     const isOwn = lastMsg?.senderId === 'me';
+    const hasUnread = item.unreadCount > 0;
 
     return (
       <TouchableOpacity
-        style={styles.conversationItem}
+        style={[styles.row, { backgroundColor: cardBg }]}
         onPress={() => navigation.navigate('ChatConversation', { conversation: item })}
-        activeOpacity={0.7}
+        activeOpacity={0.6}
       >
-
-        {/* Avatar — tik om profiel te bekijken */}
+        {/* Avatar */}
         <TouchableOpacity
           onPress={() => navigation.navigate('UserProfile', { user: item.matchedUser })}
-          style={styles.avatarContainer}
+          style={styles.avatarWrap}
+          activeOpacity={0.8}
         >
-          <Image
-            source={{ uri: item.matchedUser.photos[0] }}
-            style={styles.avatar}
-          />
-          <View style={styles.onlineDot} />
+          <Image source={{ uri: item.matchedUser.photos[0] }} style={styles.avatar} />
+          {/* Online indicator */}
+          <View style={[styles.onlineDot, { borderColor: cardBg }]} />
         </TouchableOpacity>
 
-        {/* Content */}
-        <View style={styles.conversationContent}>
-          <View style={styles.conversationHeader}>
-            <View style={styles.nameRow}>
-              <Text style={styles.userName}>{item.matchedUser.name}</Text>
+        {/* Text content */}
+        <View style={[styles.content, { borderBottomColor: separatorColor }]}>
+          <View style={styles.topRow}>
+            <View style={styles.nameWrap}>
+              <Text style={[styles.name, { color: colors.textPrimary }, hasUnread && styles.nameUnread]}>
+                {item.matchedUser.name}
+              </Text>
               {item.matchedUser.isVerified && (
-                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
+                <Ionicons name="checkmark-circle" size={13} color={colors.primary} />
               )}
             </View>
-            <Text style={styles.timeText}>
+            <Text style={[styles.time, { color: hasUnread ? colors.primary : colors.textMuted }]}>
               {lastMsg ? formatTime(lastMsg.timestamp) : ''}
             </Text>
           </View>
-          <View style={styles.messageRow}>
+
+          <View style={styles.bottomRow}>
             <Text
-              style={[styles.lastMessage, item.unreadCount > 0 && styles.lastMessageUnread]}
+              style={[
+                styles.preview,
+                { color: hasUnread ? colors.textPrimary : colors.textMuted },
+                hasUnread && styles.previewUnread,
+              ]}
               numberOfLines={1}
             >
-              {isOwn ? 'You: ' : ''}{lastMsg?.text}
+              {isOwn ? '↩ ' : ''}
+              {lastMsg?.text ?? 'New match!'}
             </Text>
-            {item.unreadCount > 0 && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>{item.unreadCount}</Text>
+            {hasUnread ? (
+              <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                <Text style={styles.badgeText}>{item.unreadCount > 9 ? '9+' : item.unreadCount}</Text>
               </View>
+            ) : (
+              <Ionicons name="checkmark-done" size={14} color={colors.textMuted} />
             )}
-          </View>
-          {/* Sport tags */}
-          <View style={styles.sportTags}>
-            {item.matchedUser.sports.slice(0, 2).map((sport) => (
-              <View key={sport.id} style={styles.sportTag}>
-                <Text style={styles.sportTagText}>{sport.emoji}</Text>
-              </View>
-            ))}
           </View>
         </View>
       </TouchableOpacity>
@@ -101,62 +108,69 @@ export const ChatListScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      {/* Header */}
-      <View style={styles.header}>
+      {/* iOS Large-title style header */}
+      <View style={[styles.header, { backgroundColor: bg, borderBottomColor: isDark ? '#38383A' : 'transparent' }]}>
         <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.headerTitle}>Messages</Text>
-            {totalUnread > 0 && (
-              <Text style={styles.headerSubtitle}>{totalUnread} unread message{totalUnread > 1 ? 's' : ''}</Text>
-            )}
-          </View>
-          <TouchableOpacity style={styles.newChatBtn}>
-            <Ionicons name="create-outline" size={22} color={Colors.primary} />
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Messages</Text>
+          <TouchableOpacity
+            style={[styles.composeBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="create-outline" size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
-        {/* Search */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color={Colors.textMuted} />
+        {totalUnread > 0 && (
+          <Text style={[styles.unreadHint, { color: colors.primary }]}>
+            {totalUnread} unread message{totalUnread > 1 ? 's' : ''}
+          </Text>
+        )}
+
+        {/* Search bar — iOS-style rounded gray */}
+        <View style={[styles.searchBar, { backgroundColor: searchBg }]}>
+          <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search conversations..."
-            placeholderTextColor={Colors.textMuted}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
+            placeholder="Search"
+            placeholderTextColor={colors.textMuted}
             value={search}
             onChangeText={setSearch}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+              <Ionicons name="close-circle-sharp" size={17} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Matches carousel */}
-      <View style={styles.matchesSection}>
-        <Text style={styles.sectionTitle}>New Matches</Text>
+      {/* New Matches row */}
+      <View style={[styles.matchesBar, { backgroundColor: bg, borderBottomColor: isDark ? '#38383A' : '#F2F2F7' }]}>
+        <Text style={[styles.matchesLabel, { color: colors.textMuted }]}>NEW MATCHES</Text>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={MOCK_CONVERSATIONS.slice(0, 5)}
-          keyExtractor={(item) => `match-${item.id}`}
+          data={MOCK_CONVERSATIONS.slice(0, 6)}
+          keyExtractor={(item) => `m-${item.id}`}
           contentContainerStyle={styles.matchesList}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.matchCircle}
+              style={styles.matchItem}
               onPress={() => navigation.navigate('ChatConversation', { conversation: item })}
+              activeOpacity={0.75}
             >
-              <Image source={{ uri: item.matchedUser.photos[0] }} style={styles.matchAvatar} />
-              {item.unreadCount > 0 && (
-                <View style={styles.matchBadge}>
-                  <Text style={styles.matchBadgeText}>{item.unreadCount}</Text>
-                </View>
-              )}
-              <Text style={styles.matchName} numberOfLines={1}>
+              <View style={styles.matchAvatarWrap}>
+                <Image source={{ uri: item.matchedUser.photos[0] }} style={styles.matchAvatar} />
+                {item.unreadCount > 0 && (
+                  <View style={[styles.matchBadge, { borderColor: bg }]}>
+                    <Text style={styles.matchBadgeText}>{item.unreadCount}</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.matchName, { color: colors.textSecondary }]} numberOfLines={1}>
                 {item.matchedUser.name.split(' ')[0]}
               </Text>
             </TouchableOpacity>
@@ -164,19 +178,20 @@ export const ChatListScreen: React.FC = () => {
         />
       </View>
 
-      {/* Conversation list */}
+      {/* Conversations */}
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        contentContainerStyle={{ paddingBottom: 100 }}
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="chat-outline" size={56} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>No conversations yet</Text>
-            <Text style={styles.emptySubtitle}>Match with someone to start chatting!</Text>
+          <View style={styles.empty}>
+            <Ionicons name="chatbubbles-outline" size={52} color={colors.textMuted} />
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No messages yet</Text>
+            <Text style={[styles.emptySub, { color: colors.textMuted }]}>
+              Match with athletes to start chatting!
+            </Text>
           </View>
         }
       />
@@ -185,146 +200,136 @@ export const ChatListScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1 },
+
+  // Header
   header: {
-    paddingTop: Platform.OS === 'ios' ? 58 : 44,
-    paddingHorizontal: Spacing['2xl'],
-    paddingBottom: Spacing.base,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    gap: Spacing.base,
+    paddingTop: Platform.OS === 'ios' ? 56 : 42,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    gap: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: { ...Typography.h2, color: Colors.textPrimary },
-  headerSubtitle: { ...Typography.bodySmall, color: Colors.primary, fontWeight: '600' },
-  newChatBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primaryLight,
+  headerTitle: { ...Typography.h1, fontWeight: '700', letterSpacing: -0.5 },
+  composeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchContainer: {
+  unreadHint: { ...Typography.caption, fontWeight: '600', marginTop: -2 },
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: BorderRadius.xl,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
+    gap: 8,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 6,
   },
   searchInput: {
     flex: 1,
     ...Typography.body,
-    color: Colors.textPrimary,
+    padding: 0,
   },
-  matchesSection: {
-    paddingVertical: Spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    gap: Spacing.sm,
+
+  // Matches
+  matchesBar: {
+    paddingTop: 14,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 10,
   },
-  sectionTitle: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    paddingHorizontal: Spacing['2xl'],
+  matchesLabel: {
+    ...Typography.labelSmall,
+    paddingHorizontal: 20,
   },
-  matchesList: { paddingHorizontal: Spacing['2xl'], gap: Spacing.base },
-  matchCircle: { alignItems: 'center', gap: 6, width: 70 },
+  matchesList: { paddingHorizontal: 16, gap: 14 },
+  matchItem: { alignItems: 'center', gap: 5, width: 64 },
+  matchAvatarWrap: { position: 'relative' },
   matchAvatar: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     borderWidth: 2.5,
-    borderColor: Colors.primary,
+    borderColor: '#4FC3F7',
   },
   matchBadge: {
     position: 'absolute',
     top: 0,
-    right: 4,
-    backgroundColor: Colors.accent,
-    borderRadius: BorderRadius.full,
-    width: 20,
-    height: 20,
+    right: 0,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    width: 18,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
   },
-  matchBadgeText: { ...Typography.caption, color: Colors.white, fontWeight: '700' },
-  matchName: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center' },
-  listContent: { paddingHorizontal: Spacing['2xl'], paddingTop: Spacing.sm, paddingBottom: 100 },
-  conversationItem: {
+  matchBadgeText: { fontSize: 9, color: '#fff', fontWeight: '800' },
+  matchName: { ...Typography.caption, textAlign: 'center', fontWeight: '500' },
+
+  // Conversation row (iMessage-style)
+  row: {
     flexDirection: 'row',
-    gap: Spacing.base,
-    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    paddingLeft: 16,
   },
-  avatarContainer: { position: 'relative' },
-  avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-  },
+  avatarWrap: { position: 'relative', marginRight: 12 },
+  avatar: { width: 54, height: 54, borderRadius: 27 },
   onlineDot: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: Colors.success,
+    bottom: 1,
+    right: 1,
+    width: 13,
+    height: 13,
+    borderRadius: 6.5,
+    backgroundColor: '#30D158',
     borderWidth: 2,
-    borderColor: Colors.white,
   },
-  conversationContent: { flex: 1, justifyContent: 'center', gap: 3 },
-  conversationHeader: {
+  // Content fills width, has its own bottom border (like iOS)
+  content: {
+    flex: 1,
+    paddingVertical: 13,
+    paddingRight: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 3,
+  },
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  userName: { ...Typography.h4, color: Colors.textPrimary },
-  timeText: { ...Typography.caption, color: Colors.textMuted },
-  messageRow: {
+  nameWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  name: { ...Typography.labelLarge, fontWeight: '500' },
+  nameUnread: { fontWeight: '700' },
+  time: { ...Typography.caption },
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: Spacing.sm,
+    gap: 8,
   },
-  lastMessage: { flex: 1, ...Typography.body, color: Colors.textSecondary },
-  lastMessageUnread: { color: Colors.textPrimary, fontWeight: '600' },
-  unreadBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.full,
+  preview: { flex: 1, ...Typography.body, lineHeight: 20 },
+  previewUnread: { fontWeight: '500' },
+  badge: {
+    borderRadius: 10,
     minWidth: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 5,
   },
-  unreadText: { ...Typography.caption, color: Colors.white, fontWeight: '700' },
-  sportTags: { flexDirection: 'row', gap: 4 },
-  sportTag: {
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: BorderRadius.full,
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sportTagText: { fontSize: 12 },
-  separator: { height: 1, backgroundColor: Colors.border },
-  emptyState: {
-    alignItems: 'center',
-    paddingTop: Spacing['5xl'],
-    gap: Spacing.md,
-  },
-  emptyTitle: { ...Typography.h3, color: Colors.textPrimary },
-  emptySubtitle: { ...Typography.body, color: Colors.textSecondary, textAlign: 'center' },
+  badgeText: { fontSize: 11, color: '#fff', fontWeight: '800' },
+
+  // Empty
+  empty: { alignItems: 'center', paddingTop: 80, gap: 12, paddingHorizontal: 32 },
+  emptyTitle: { ...Typography.h3 },
+  emptySub: { ...Typography.body, textAlign: 'center' },
 });

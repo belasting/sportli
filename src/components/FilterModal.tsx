@@ -15,11 +15,26 @@ import { SPORTS } from '../data/sports';
 import { SkillLevel } from '../types';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
 
+export type GenderOption = 'all' | 'male' | 'female' | 'nonbinary';
+
 export type FilterState = {
   maxDistance: number;
   selectedSports: string[];
   skillLevel: SkillLevel | null;
   city: string;
+  ageMin: number;
+  ageMax: number;
+  gender: GenderOption;
+};
+
+export const DEFAULT_FILTER_STATE: FilterState = {
+  maxDistance: 25,
+  selectedSports: [],
+  skillLevel: null,
+  city: '',
+  ageMin: 18,
+  ageMax: 45,
+  gender: 'all',
 };
 
 interface FilterModalProps {
@@ -37,7 +52,12 @@ const SKILL_COLORS: Record<SkillLevel, string> = {
   Advanced: Colors.secondary,
   Pro: Colors.accent,
 };
-
+const GENDER_OPTIONS: { value: GenderOption; label: string; icon: string }[] = [
+  { value: 'all', label: 'Everyone', icon: '👥' },
+  { value: 'male', label: 'Men', icon: '👨' },
+  { value: 'female', label: 'Women', icon: '👩' },
+  { value: 'nonbinary', label: 'Non-binary', icon: '🧑' },
+];
 const POPULAR_CITIES = [
   'New York, NY', 'Los Angeles, CA', 'Chicago, IL',
   'Houston, TX', 'Miami, FL', 'Seattle, WA',
@@ -45,18 +65,13 @@ const POPULAR_CITIES = [
   'Atlanta, GA', 'Phoenix, AZ', 'San Diego, CA',
 ];
 
-const DEFAULT_FILTERS: FilterState = {
-  maxDistance: 25,
-  selectedSports: [],
-  skillLevel: null,
-  city: '',
-};
-
 export const FilterModal: React.FC<FilterModalProps> = ({
   visible, initial, onClose, onApply,
 }) => {
-  const [filters, setFilters] = useState<FilterState>(initial ?? DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<FilterState>(initial ?? DEFAULT_FILTER_STATE);
   const [citySearch, setCitySearch] = useState('');
+  const [ageMinText, setAgeMinText] = useState(String(initial?.ageMin ?? DEFAULT_FILTER_STATE.ageMin));
+  const [ageMaxText, setAgeMaxText] = useState(String(initial?.ageMax ?? DEFAULT_FILTER_STATE.ageMax));
 
   const toggleSport = (id: string) => {
     setFilters((prev) => ({
@@ -67,15 +82,40 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     }));
   };
 
+  const handleAgeMin = (v: string) => {
+    setAgeMinText(v);
+    const n = parseInt(v);
+    if (!isNaN(n) && n >= 13 && n <= filters.ageMax) {
+      setFilters((p) => ({ ...p, ageMin: n }));
+    }
+  };
+
+  const handleAgeMax = (v: string) => {
+    setAgeMaxText(v);
+    const n = parseInt(v);
+    if (!isNaN(n) && n <= 99 && n >= filters.ageMin) {
+      setFilters((p) => ({ ...p, ageMax: n }));
+    }
+  };
+
   const filteredCities = POPULAR_CITIES.filter((c) =>
     c.toLowerCase().includes(citySearch.toLowerCase())
   );
 
   const activeCount =
-    (filters.maxDistance !== DEFAULT_FILTERS.maxDistance ? 1 : 0) +
+    (filters.maxDistance !== DEFAULT_FILTER_STATE.maxDistance ? 1 : 0) +
     filters.selectedSports.length +
     (filters.skillLevel ? 1 : 0) +
-    (filters.city ? 1 : 0);
+    (filters.city ? 1 : 0) +
+    (filters.gender !== 'all' ? 1 : 0) +
+    (filters.ageMin !== DEFAULT_FILTER_STATE.ageMin || filters.ageMax !== DEFAULT_FILTER_STATE.ageMax ? 1 : 0);
+
+  const resetAll = () => {
+    setFilters(DEFAULT_FILTER_STATE);
+    setCitySearch('');
+    setAgeMinText(String(DEFAULT_FILTER_STATE.ageMin));
+    setAgeMaxText(String(DEFAULT_FILTER_STATE.ageMax));
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
@@ -89,14 +129,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           <View>
             <Text style={styles.title}>Filters</Text>
             {activeCount > 0 && (
-              <Text style={styles.activeCount}>{activeCount} active filter{activeCount > 1 ? 's' : ''}</Text>
+              <Text style={styles.activeCount}>{activeCount} active</Text>
             )}
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity
-              onPress={() => { setFilters(DEFAULT_FILTERS); setCitySearch(''); }}
-              style={styles.resetBtn}
-            >
+            <TouchableOpacity onPress={resetAll} style={styles.resetBtn}>
               <Text style={styles.resetText}>Reset all</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -105,21 +142,128 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           </View>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
 
-          {/* ── City ────────────────────────────────────── */}
+          {/* ── Gender ────────────────────────────────────── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="person-outline" size={16} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Show Me</Text>
+              {filters.gender !== 'all' && (
+                <TouchableOpacity
+                  onPress={() => setFilters((p) => ({ ...p, gender: 'all' }))}
+                  style={styles.clearPill}
+                >
+                  <Text style={styles.clearPillText}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.genderRow}>
+              {GENDER_OPTIONS.map((opt) => {
+                const active = filters.gender === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => setFilters((p) => ({ ...p, gender: opt.value }))}
+                    style={[styles.genderChip, active && styles.genderChipActive]}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={styles.genderEmoji}>{opt.icon}</Text>
+                    <Text style={[styles.genderText, active && styles.genderTextActive]}>{opt.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* ── Age Range ─────────────────────────────────── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="calendar-outline" size={16} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Age Range</Text>
+              <View style={styles.valueBadge}>
+                <Text style={styles.valueText}>{filters.ageMin}–{filters.ageMax} yrs</Text>
+              </View>
+            </View>
+            <View style={styles.ageRow}>
+              <View style={styles.ageInputWrap}>
+                <Text style={styles.ageInputLabel}>Min age</Text>
+                <View style={styles.ageInputField}>
+                  <TextInput
+                    style={styles.ageInput}
+                    value={ageMinText}
+                    onChangeText={handleAgeMin}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    selectTextOnFocus
+                    placeholderTextColor={Colors.textMuted}
+                  />
+                </View>
+              </View>
+              <View style={styles.ageDash}>
+                <View style={styles.ageDashLine} />
+              </View>
+              <View style={styles.ageInputWrap}>
+                <Text style={styles.ageInputLabel}>Max age</Text>
+                <View style={styles.ageInputField}>
+                  <TextInput
+                    style={styles.ageInput}
+                    value={ageMaxText}
+                    onChangeText={handleAgeMax}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    selectTextOnFocus
+                    placeholderTextColor={Colors.textMuted}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Quick age presets */}
+            <View style={styles.chipRow}>
+              {[
+                { label: '18–25', min: 18, max: 25 },
+                { label: '25–35', min: 25, max: 35 },
+                { label: '35–45', min: 35, max: 45 },
+                { label: '45+', min: 45, max: 99 },
+              ].map((preset) => {
+                const active = filters.ageMin === preset.min && filters.ageMax === preset.max;
+                return (
+                  <TouchableOpacity
+                    key={preset.label}
+                    onPress={() => {
+                      setFilters((p) => ({ ...p, ageMin: preset.min, ageMax: preset.max }));
+                      setAgeMinText(String(preset.min));
+                      setAgeMaxText(String(preset.max));
+                    }}
+                    style={[styles.chip, active && styles.chipActive]}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{preset.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* ── City ────────────────────────────────────────── */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="navigate-outline" size={16} color={Colors.primary} />
               <Text style={styles.sectionTitle}>City</Text>
               {filters.city ? (
-                <TouchableOpacity onPress={() => { setFilters((p) => ({ ...p, city: '' })); setCitySearch(''); }} style={styles.clearPill}>
+                <TouchableOpacity
+                  onPress={() => { setFilters((p) => ({ ...p, city: '' })); setCitySearch(''); }}
+                  style={styles.clearPill}
+                >
                   <Text style={styles.clearPillText}>Clear</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
-
-            {/* Search input */}
             <View style={styles.citySearchBar}>
               <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
               <TextInput
@@ -135,8 +279,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 </TouchableOpacity>
               )}
             </View>
-
-            {/* City chips */}
             <View style={styles.chipRow}>
               {filteredCities.map((city) => {
                 const active = filters.city === city;
@@ -147,7 +289,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     style={[styles.chip, active && styles.chipActive]}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="location-outline" size={12} color={active ? Colors.primaryDark : Colors.textMuted} />
+                    <Ionicons name="location-outline" size={11} color={active ? Colors.primaryDark : Colors.textMuted} />
                     <Text style={[styles.chipText, active && styles.chipTextActive]}>{city}</Text>
                   </TouchableOpacity>
                 );
@@ -155,7 +297,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </View>
           </View>
 
-          {/* ── Distance ─────────────────────────────────── */}
+          {/* ── Distance ─────────────────────────────────────── */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="location-outline" size={16} color={Colors.primary} />
@@ -185,7 +327,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </View>
           </View>
 
-          {/* ── Skill Level ───────────────────────────────── */}
+          {/* ── Skill Level ──────────────────────────────────── */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="trending-up-outline" size={16} color={Colors.primary} />
@@ -217,7 +359,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </View>
           </View>
 
-          {/* ── Sports ────────────────────────────────────── */}
+          {/* ── Sports ───────────────────────────────────────── */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="football-outline" size={16} color={Colors.primary} />
@@ -280,7 +422,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopLeftRadius: BorderRadius['3xl'],
     borderTopRightRadius: BorderRadius['3xl'],
-    maxHeight: '90%',
+    maxHeight: '92%',
     ...Shadow.lg,
   },
   handle: {
@@ -298,11 +440,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing['2xl'],
     paddingBottom: Spacing.base,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.border,
   },
   title: { ...Typography.h3, color: Colors.textPrimary },
-  activeCount: { ...Typography.caption, color: Colors.primary, fontWeight: '600', marginTop: 1 },
+  activeCount: { ...Typography.caption, color: Colors.primary, fontWeight: '700', marginTop: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   resetBtn: {
     backgroundColor: Colors.surfaceAlt,
@@ -343,7 +485,56 @@ const styles = StyleSheet.create({
   },
   clearPillText: { ...Typography.caption, color: Colors.accent, fontWeight: '600' },
 
-  // City search
+  // Gender
+  genderRow: { flexDirection: 'row', gap: Spacing.sm },
+  genderChip: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surfaceAlt,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  genderChipActive: { backgroundColor: Colors.primaryLight, borderColor: Colors.primary },
+  genderEmoji: { fontSize: 20 },
+  genderText: { ...Typography.caption, color: Colors.textSecondary, fontWeight: '600' },
+  genderTextActive: { color: Colors.primaryDark },
+
+  // Age
+  ageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.base,
+  },
+  ageInputWrap: { flex: 1, gap: Spacing.xs },
+  ageInputLabel: { ...Typography.caption, color: Colors.textMuted, fontWeight: '600' },
+  ageInputField: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  ageInput: {
+    ...Typography.h4,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    padding: 0,
+    minWidth: 40,
+  },
+  ageDash: { alignItems: 'center', justifyContent: 'center', paddingTop: 20 },
+  ageDashLine: {
+    width: 16,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: Colors.border,
+  },
+
+  // City
   citySearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -362,7 +553,7 @@ const styles = StyleSheet.create({
     padding: 0,
   },
 
-  // Chips
+  // Generic chips
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   chip: {
     flexDirection: 'row',
@@ -402,7 +593,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['2xl'],
     paddingTop: Spacing.base,
     paddingBottom: Platform.OS === 'ios' ? 38 : Spacing['2xl'],
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,
   },
   applyWrap: { borderRadius: BorderRadius.xl, overflow: 'hidden', ...Shadow.md },

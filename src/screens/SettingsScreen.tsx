@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>;
@@ -22,7 +23,8 @@ type SettingToggle = { id: string; label: string; sub?: string; icon: string; ic
 type SettingNav = { label: string; sub?: string; icon: string; iconBg: string; onPress: () => void };
 
 export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
-  const [darkMode, setDarkMode] = useState(false);
+  const { isDark, toggleTheme, colors } = useTheme();
+  const darkMode = isDark;
   const [notifications, setNotifications] = useState(true);
   const [matchAlerts, setMatchAlerts] = useState(true);
   const [messageAlerts, setMessageAlerts] = useState(true);
@@ -39,7 +41,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     {
       title: 'Appearance',
       items: [
-        { id: 'darkMode', label: 'Dark Mode', sub: 'Easier on the eyes at night', icon: 'moon-outline', iconBg: '#3A3A5C', value: darkMode },
+        { id: 'darkMode', label: 'Dark Mode', sub: 'Easier on the eyes at night', icon: 'moon', iconBg: '#3A3A5C', value: darkMode },
       ],
     },
     {
@@ -68,7 +70,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   ];
 
   const toggleHandlers: Record<string, (v: boolean) => void> = {
-    darkMode: setDarkMode,
+    darkMode: () => toggleTheme(),
     notifications: setNotifications,
     matchAlerts: setMatchAlerts,
     messageAlerts: setMessageAlerts,
@@ -100,16 +102,22 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     },
   ];
 
+  const bg = isDark ? '#000' : Colors.background;
+  const cardBg = isDark ? '#1C1C1E' : Colors.white;
+  const borderColor = isDark ? '#38383A' : Colors.border;
+  const textPrimary = isDark ? '#fff' : Colors.textPrimary;
+  const textMuted = isDark ? '#8E8E93' : Colors.textMuted;
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+      <View style={[styles.header, { backgroundColor: isDark ? '#1C1C1E' : Colors.white, borderBottomColor: borderColor }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: isDark ? '#2C2C2E' : Colors.surfaceAlt }]}>
+          <Ionicons name="arrow-back" size={22} color={textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: textPrimary }]}>Settings</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -118,8 +126,8 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         {/* Toggle sections */}
         {toggleSections.map((section) => (
           <View key={section.title} style={styles.sectionBlock}>
-            <Text style={styles.sectionLabel}>{section.title}</Text>
-            <View style={styles.card}>
+            <Text style={[styles.sectionLabel, { color: textMuted }]}>{section.title}</Text>
+            <View style={[styles.card, { backgroundColor: cardBg }]}>
               {section.items.map((item, i) => (
                 <React.Fragment key={item.id}>
                   <View style={styles.settingRow}>
@@ -127,17 +135,18 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
                       <Ionicons name={item.icon as any} size={17} color={Colors.white} />
                     </View>
                     <View style={styles.settingText}>
-                      <Text style={styles.settingLabel}>{item.label}</Text>
-                      {item.sub && <Text style={styles.settingSub}>{item.sub}</Text>}
+                      <Text style={[styles.settingLabel, { color: textPrimary }]}>{item.label}</Text>
+                      {item.sub && <Text style={[styles.settingSub, { color: textMuted }]}>{item.sub}</Text>}
                     </View>
                     <Switch
                       value={item.value}
                       onValueChange={toggleHandlers[item.id]}
-                      trackColor={{ false: Colors.border, true: Colors.primaryLight }}
-                      thumbColor={item.value ? Colors.primary : Colors.textMuted}
+                      trackColor={{ false: borderColor, true: Colors.primary }}
+                      thumbColor="#fff"
+                      ios_backgroundColor={borderColor}
                     />
                   </View>
-                  {i < section.items.length - 1 && <View style={styles.divider} />}
+                  {i < section.items.length - 1 && <View style={[styles.divider, { backgroundColor: borderColor, marginLeft: 58 }]} />}
                 </React.Fragment>
               ))}
             </View>
@@ -147,8 +156,8 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         {/* Nav sections */}
         {navItems.map((section) => (
           <View key={section.title} style={styles.sectionBlock}>
-            <Text style={styles.sectionLabel}>{section.title}</Text>
-            <View style={styles.card}>
+            <Text style={[styles.sectionLabel, { color: textMuted }]}>{section.title}</Text>
+            <View style={[styles.card, { backgroundColor: cardBg }]}>
               {section.items.map((item, i) => (
                 <React.Fragment key={item.label}>
                   <TouchableOpacity style={styles.settingRow} onPress={item.onPress} activeOpacity={0.7}>
@@ -156,12 +165,12 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
                       <Ionicons name={item.icon as any} size={17} color={Colors.white} />
                     </View>
                     <View style={styles.settingText}>
-                      <Text style={styles.settingLabel}>{item.label}</Text>
-                      {item.sub && <Text style={styles.settingSub}>{item.sub}</Text>}
+                      <Text style={[styles.settingLabel, { color: textPrimary }]}>{item.label}</Text>
+                      {item.sub && <Text style={[styles.settingSub, { color: textMuted }]}>{item.sub}</Text>}
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                    <Ionicons name="chevron-forward" size={16} color={textMuted} />
                   </TouchableOpacity>
-                  {i < section.items.length - 1 && <View style={styles.divider} />}
+                  {i < section.items.length - 1 && <View style={[styles.divider, { backgroundColor: borderColor, marginLeft: 58 }]} />}
                 </React.Fragment>
               ))}
             </View>
