@@ -23,6 +23,7 @@ import { SportBadge } from '../components/SportBadge';
 import { Typography, Spacing, BorderRadius, Shadow } from '../theme';
 import { RootStackParamList } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { SportliLogo } from '../components/SportliLogo';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -142,7 +143,10 @@ export const ProfileScreen: React.FC = () => {
 
           {/* Top bar */}
           <View style={styles.heroTopBar}>
-            <Text style={styles.heroTitle}>My Profile</Text>
+            <View style={styles.heroTitleRow}>
+              <SportliLogo size={28} />
+              <Text style={styles.heroTitle}>My Profile</Text>
+            </View>
             <TouchableOpacity style={styles.menuBtn} onPress={openMenu} activeOpacity={0.75}>
               <Ionicons name="ellipsis-horizontal" size={20} color="rgba(255,255,255,0.95)" />
             </TouchableOpacity>
@@ -489,6 +493,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 58 : 44,
     paddingHorizontal: 24,
   },
+  heroTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   heroTitle: { ...Typography.h3, color: '#fff', fontWeight: '700' },
   menuBtn: {
     width: 36,

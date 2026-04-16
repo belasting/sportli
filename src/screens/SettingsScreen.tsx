@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { SportliLogo } from '../components/SportliLogo';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>;
@@ -117,7 +118,10 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: isDark ? '#2C2C2E' : Colors.surfaceAlt }]}>
           <Ionicons name="arrow-back" size={22} color={textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: textPrimary }]}>Settings</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <SportliLogo size={26} />
+          <Text style={[styles.headerTitle, { color: textPrimary }]}>Settings</Text>
+        </View>
         <View style={{ width: 40 }} />
       </View>
 

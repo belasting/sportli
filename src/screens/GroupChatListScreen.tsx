@@ -20,6 +20,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, GroupChat } from '../types';
 import { SPORTS } from '../data/sports';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
+import { SportliLogo } from '../components/SportliLogo';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -194,12 +195,7 @@ export const GroupChatListScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <LinearGradient
-            colors={[Colors.secondary, '#FF5722']}
-            style={styles.headerIcon}
-          >
-            <Ionicons name="people" size={18} color={Colors.white} />
-          </LinearGradient>
+          <SportliLogo size={30} />
           <View>
             <Text style={styles.headerTitle}>Groups</Text>
             {totalUnread > 0 && (

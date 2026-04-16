@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,11 +20,12 @@ import { ActionButton } from '../components/ActionButton';
 import { MatchModal } from '../components/MatchModal';
 import { FilterModal, FilterState, DEFAULT_FILTER_STATE } from '../components/FilterModal';
 import { ToastNotification, ToastType } from '../components/ToastNotification';
+import { SportliLogo } from '../components/SportliLogo';
 import { useSwipeAnimation } from '../hooks/useSwipeAnimation';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
 import { User } from '../types';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SAFE_TOP = Platform.OS === 'ios' ? 54 : 38;
 
 export const HomeScreen: React.FC = () => {
@@ -35,6 +36,26 @@ export const HomeScreen: React.FC = () => {
   const [likeCount, setLikeCount] = useState(0);
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>(DEFAULT_FILTER_STATE);
+
+  // Top card photo index — controlled here so panResponder taps can drive it
+  const [topPhotoIndex, setTopPhotoIndex] = useState(0);
+  const topUser = users[users.length - 1];
+
+  // Reset photo index whenever the top card changes
+  useEffect(() => {
+    setTopPhotoIndex(0);
+  }, [topUser?.id]);
+
+  // Ref keeps the tap handler fresh inside the panResponder closure
+  const onTapRef = useRef<(pageX: number) => void>(() => {});
+  onTapRef.current = (pageX: number) => {
+    if (!topUser) return;
+    if (pageX < SCREEN_WIDTH / 2) {
+      setTopPhotoIndex((i) => Math.max(0, i - 1));
+    } else {
+      setTopPhotoIndex((i) => Math.min(topUser.photos.length - 1, i + 1));
+    }
+  };
 
   const [toast, setToast] = useState<{
     visible: boolean;
@@ -66,7 +87,11 @@ export const HomeScreen: React.FC = () => {
   };
 
   const { panResponder, getCardStyle, getLikeOpacity, getNopeOpacity, getNextCardScale, forceSwipe } =
-    useSwipeAnimation({ onSwipeLeft: handleSwipeLeft, onSwipeRight: handleSwipeRight });
+    useSwipeAnimation({
+      onSwipeLeft: handleSwipeLeft,
+      onSwipeRight: handleSwipeRight,
+      onTap: (pageX) => onTapRef.current(pageX),
+    });
 
   const handleReset = () => {
     setUsers(MOCK_USERS);
@@ -114,6 +139,7 @@ export const HomeScreen: React.FC = () => {
               likeOpacity={getLikeOpacity()}
               nopeOpacity={getNopeOpacity()}
               onInfoPress={() => navigation.navigate('UserProfile', { user })}
+              photoIndex={topPhotoIndex}
             />
           );
         }
@@ -142,7 +168,7 @@ export const HomeScreen: React.FC = () => {
       <View style={styles.cardsArea}>
         {renderCards()}
 
-        {/* Floating top overlay — like counter + filter button only (no logo) */}
+        {/* Floating top bar: like counter + Sportli logo + filter */}
         <View style={styles.topOverlay} pointerEvents="box-none">
           {/* Like counter pill */}
           <View style={styles.likeCountPill}>
@@ -150,10 +176,12 @@ export const HomeScreen: React.FC = () => {
             <Text style={styles.likeCountText}>{likeCount}</Text>
           </View>
 
-          {/* Spacer */}
-          <View style={{ flex: 1 }} />
+          {/* Sportli logo centered */}
+          <View style={styles.logoWrap} pointerEvents="none">
+            <SportliLogo size={38} />
+          </View>
 
-          {/* Glass filter button */}
+          {/* Filter button */}
           <TouchableOpacity
             style={[styles.glassBtn, hasActiveFilters && styles.glassBtnActive]}
             onPress={() => setShowFilter(true)}
@@ -265,6 +293,11 @@ const styles = StyleSheet.create({
     ...Shadow.sm,
   },
   likeCountText: { ...Typography.caption, color: Colors.accent, fontWeight: '800' },
+  logoWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   glassBtn: {
     backgroundColor: 'rgba(255,255,255,0.88)',
     borderRadius: BorderRadius.lg,

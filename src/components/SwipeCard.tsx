@@ -16,7 +16,6 @@ import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Larger card for edge-to-edge feel
 export const CARD_WIDTH = SCREEN_WIDTH - 20;
 export const CARD_HEIGHT = SCREEN_HEIGHT * 0.72;
 
@@ -28,6 +27,11 @@ interface SwipeCardProps {
   likeOpacity?: Animated.AnimatedInterpolation<string | number>;
   nopeOpacity?: Animated.AnimatedInterpolation<string | number>;
   onInfoPress?: () => void;
+  /**
+   * When provided, this overrides the internal photoIndex state.
+   * Use this on the top card so HomeScreen (via panResponder tap) can drive navigation.
+   */
+  photoIndex?: number;
 }
 
 export const SwipeCard: React.FC<SwipeCardProps> = ({
@@ -38,81 +42,66 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
   likeOpacity,
   nopeOpacity,
   onInfoPress,
+  photoIndex,
 }) => {
-  const [photoIndex, setPhotoIndex] = useState(0);
+  // Internal state as fallback — only used when photoIndex prop is not provided
+  const [internalIndex, setInternalIndex] = useState(0);
 
-  // Reset photo index when the user card changes — fixes the "stuck photo" bug
   useEffect(() => {
-    setPhotoIndex(0);
+    setInternalIndex(0);
   }, [user.id]);
 
-  const handlePhotoTap = (side: 'left' | 'right') => {
-    if (side === 'right' && photoIndex < user.photos.length - 1) {
-      setPhotoIndex((i) => i + 1);
-    } else if (side === 'left' && photoIndex > 0) {
-      setPhotoIndex((i) => i - 1);
-    }
-  };
+  const activeIndex = photoIndex !== undefined ? photoIndex : internalIndex;
 
   return (
     <Animated.View style={[styles.card, style]} {...(isTop ? panHandlers : {})}>
       {/* Photo */}
       <Image
-        source={{ uri: user.photos[photoIndex] }}
+        source={{ uri: user.photos[activeIndex] }}
         style={styles.photo}
         resizeMode="cover"
       />
 
-      {/* Photo tap areas — work now because pan responder uses onMoveShouldSetPanResponder */}
-      <View style={styles.tapContainer} pointerEvents="box-none">
-        <TouchableOpacity
-          style={styles.tapLeft}
-          onPress={() => handlePhotoTap('left')}
-          activeOpacity={1}
-        />
-        <TouchableOpacity
-          style={styles.tapRight}
-          onPress={() => handlePhotoTap('right')}
-          activeOpacity={1}
-        />
-      </View>
-
-      {/* Photo progress bar dots */}
+      {/* Photo progress dots */}
       {user.photos.length > 1 && (
-        <View style={styles.dotsContainer}>
+        <View style={styles.dotsContainer} pointerEvents="none">
           {user.photos.map((_, i) => (
-            <View
-              key={i}
-              style={[styles.dot, i === photoIndex && styles.dotActive]}
-            />
+            <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
           ))}
         </View>
       )}
 
-      {/* LIKE stamp overlay */}
+      {/* LIKE stamp */}
       {likeOpacity && (
-        <Animated.View style={[styles.stamp, styles.likeStamp, { opacity: likeOpacity }]}>
+        <Animated.View
+          style={[styles.stamp, styles.likeStamp, { opacity: likeOpacity }]}
+          pointerEvents="none"
+        >
           <Text style={styles.stampText}>LIKE</Text>
           <Ionicons name="heart" size={22} color={Colors.white} />
         </Animated.View>
       )}
 
-      {/* NOPE stamp overlay */}
+      {/* NOPE stamp */}
       {nopeOpacity && (
-        <Animated.View style={[styles.stamp, styles.nopeStamp, { opacity: nopeOpacity }]}>
+        <Animated.View
+          style={[styles.stamp, styles.nopeStamp, { opacity: nopeOpacity }]}
+          pointerEvents="none"
+        >
           <Ionicons name="close" size={22} color={Colors.white} />
           <Text style={styles.stampText}>NOPE</Text>
         </Animated.View>
       )}
 
-      {/* Gradient info panel */}
+      {/*
+        Gradient panel — no pointerEvents="none" so the info button works.
+        All text/badge rows are pointerEvents="none" so touches pass through to the card.
+      */}
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.18)', 'rgba(0,0,0,0.88)']}
         style={styles.gradient}
-        pointerEvents="none"
       >
-        {/* Badges row */}
-        <View style={styles.badgeRow}>
+        <View style={styles.badgeRow} pointerEvents="none">
           {user.isVerified && (
             <View style={styles.verifiedBadge}>
               <Ionicons name="checkmark-circle" size={13} color={Colors.primaryLight} />
@@ -126,14 +115,12 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
           )}
         </View>
 
-        {/* Name + age */}
-        <View style={styles.nameRow}>
+        <View style={styles.nameRow} pointerEvents="none">
           <Text style={styles.name}>{user.name}</Text>
           <Text style={styles.age}>{user.age}</Text>
         </View>
 
-        {/* Distance */}
-        <View style={styles.distRow}>
+        <View style={styles.distRow} pointerEvents="none">
           <Ionicons name="location-outline" size={13} color={Colors.primaryLight} />
           <Text style={styles.distText}>
             {user.distance < 1
@@ -142,23 +129,21 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
           </Text>
         </View>
 
-        {/* Sports */}
-        <View style={styles.sportsRow}>
+        <View style={styles.sportsRow} pointerEvents="none">
           {user.sports.slice(0, 3).map((sport) => (
             <SportBadge key={sport.id} sport={sport} size="sm" variant="ghost" />
           ))}
         </View>
 
-        {/* Bio + info button */}
         <View style={styles.bioRow}>
-          <Text style={styles.bio} numberOfLines={2}>
+          <Text style={styles.bio} numberOfLines={2} pointerEvents="none">
             {user.bio}
           </Text>
           {onInfoPress && (
             <TouchableOpacity
               onPress={onInfoPress}
               style={styles.infoBtn}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
             >
               <View style={styles.infoBtnInner}>
                 <Ionicons name="information-circle" size={26} color={Colors.white} />
@@ -183,12 +168,6 @@ const styles = StyleSheet.create({
   photo: {
     ...StyleSheet.absoluteFillObject,
   },
-  tapContainer: {
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: 'row',
-  },
-  tapLeft: { flex: 1 },
-  tapRight: { flex: 1 },
   dotsContainer: {
     position: 'absolute',
     top: Spacing.md,
@@ -259,7 +238,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
   },
-  verifiedText: { ...Typography.caption, color: Colors.primaryLight, fontWeight: '600', fontSize: 10 },
+  verifiedText: {
+    ...Typography.caption,
+    color: Colors.primaryLight,
+    fontWeight: '600',
+    fontSize: 10,
+  },
   premiumBadge: {
     backgroundColor: 'rgba(255,152,0,0.2)',
     borderRadius: BorderRadius.full,

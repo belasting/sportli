@@ -17,6 +17,7 @@ import { MOCK_CONVERSATIONS } from '../data/mockChats';
 import { Conversation, RootStackParamList } from '../types';
 import { Typography, Spacing, BorderRadius } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { SportliLogo } from '../components/SportliLogo';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -114,6 +115,7 @@ export const ChatListScreen: React.FC = () => {
       {/* iOS Large-title style header */}
       <View style={[styles.header, { backgroundColor: bg, borderBottomColor: isDark ? '#38383A' : 'transparent' }]}>
         <View style={styles.headerTop}>
+          <SportliLogo size={30} />
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Messages</Text>
           <TouchableOpacity
             style={[styles.composeBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
