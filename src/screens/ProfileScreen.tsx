@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CURRENT_USER } from '../data/mockUsers';
 import { SportBadge } from '../components/SportBadge';
+import { ProfileCompletionBar } from '../components/ProfileCompletionBar';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../theme';
 import { RootStackParamList } from '../types';
 
@@ -134,6 +135,12 @@ export const ProfileScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={20} color={Colors.white} />
           </View>
         </TouchableOpacity>
+
+        {/* Profile completion bar */}
+        <ProfileCompletionBar
+          user={CURRENT_USER}
+          onEditPress={() => navigation.navigate('EditProfile')}
+        />
 
         {/* Bio */}
         <View style={styles.section}>
@@ -371,13 +378,14 @@ const styles = StyleSheet.create({
 
   // Sections
   section: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     marginHorizontal: Spacing.base,
     marginBottom: Spacing.sm,
     padding: Spacing.lg,
     gap: Spacing.md,
-    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { ...Typography.h4, color: Colors.textPrimary },
@@ -392,8 +400,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.primary,
   },
-  skillText: { ...Typography.label, color: Colors.primaryDark },
+  skillText: { ...Typography.label, color: Colors.primary },
 
   daysRow: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
   dayChip: {
@@ -413,8 +423,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: Colors.primary,
   },
-  timeSlotText: { ...Typography.caption, color: Colors.primaryDark, fontWeight: '600' },
+  timeSlotText: { ...Typography.caption, color: Colors.primary, fontWeight: '600' },
 
   toggleItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toggleLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
@@ -425,12 +437,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     marginHorizontal: Spacing.base,
     marginBottom: Spacing.sm,
     padding: Spacing.lg,
-    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   settingLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   settingIcon: {
@@ -450,10 +463,11 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginHorizontal: Spacing.base,
     marginTop: Spacing.sm,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
-    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   logoutText: { ...Typography.labelLarge, color: Colors.accent },
   version: { ...Typography.caption, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg },
@@ -468,10 +482,11 @@ const styles = StyleSheet.create({
     paddingRight: Spacing['2xl'],
   },
   menuSheet: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     minWidth: 220,
-    ...Shadow.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
     overflow: 'hidden',
   },
   menuItem: {

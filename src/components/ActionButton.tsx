@@ -2,12 +2,12 @@ import React from 'react';
 import {
   TouchableWithoutFeedback,
   Animated,
-  View,
   StyleSheet,
   ViewStyle,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAnimatedPress } from '../hooks/useAnimatedPress';
-import { Colors, BorderRadius, Shadow } from '../theme';
+import { Colors } from '../theme';
 
 interface ActionButtonProps {
   onPress: () => void;
@@ -17,24 +17,20 @@ interface ActionButtonProps {
   style?: ViewStyle;
 }
 
-const VARIANT_COLORS = {
-  like: Colors.primary,
-  nope: Colors.accent,
-  super: Colors.secondary,
-  neutral: Colors.white,
+const SIZES = { sm: 48, md: 60, lg: 72 };
+
+const VARIANT_BG: Record<string, string> = {
+  like: 'transparent',  // gradient handles it
+  nope: Colors.surfaceAlt,
+  super: Colors.surfaceAlt,
+  neutral: Colors.surfaceAlt,
 };
 
-const VARIANT_BORDER = {
-  like: Colors.primary,
+const VARIANT_BORDER: Record<string, string> = {
+  like: 'transparent',
   nope: Colors.accent,
   super: Colors.secondary,
   neutral: Colors.border,
-};
-
-const SIZES = {
-  sm: 48,
-  md: 60,
-  lg: 72,
 };
 
 export const ActionButton: React.FC<ActionButtonProps> = ({
@@ -46,6 +42,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
 }) => {
   const { scaleAnim, onPressIn, onPressOut } = useAnimatedPress(0.88);
   const dim = SIZES[size];
+  const isLike = variant === 'like';
 
   return (
     <TouchableWithoutFeedback onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
@@ -56,14 +53,26 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
             width: dim,
             height: dim,
             borderRadius: dim / 2,
-            backgroundColor: Colors.white,
+            backgroundColor: VARIANT_BG[variant],
             borderColor: VARIANT_BORDER[variant],
             transform: [{ scale: scaleAnim }],
+            shadowColor: isLike ? Colors.primary : Colors.shadowDark,
+            shadowOffset: { width: 0, height: isLike ? 6 : 3 },
+            shadowOpacity: isLike ? 0.45 : 0.22,
+            shadowRadius: isLike ? 16 : 8,
+            elevation: isLike ? 10 : 4,
           },
-          Shadow.md,
           style,
         ]}
       >
+        {isLike && (
+          <LinearGradient
+            colors={['#FF6B35', '#FF3366']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFill, { borderRadius: dim / 2 }]}
+          />
+        )}
         {children}
       </Animated.View>
     </TouchableWithoutFeedback>
@@ -74,6 +83,7 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2.5,
+    borderWidth: 1.5,
+    overflow: 'hidden',
   },
 });

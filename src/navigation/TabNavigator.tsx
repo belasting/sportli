@@ -27,8 +27,8 @@ const TabIcon = ({
 }) => (
   <View style={tabStyles.iconWrapper}>
     <Ionicons
-      name={focused ? name : (`${name}-outline` as any)}
-      size={26}
+      name={focused ? name : (`${name}-outline` as keyof typeof Ionicons.glyphMap)}
+      size={24}
       color={focused ? Colors.primary : Colors.textMuted}
     />
     {!!badge && (
@@ -42,30 +42,30 @@ const TabIcon = ({
 const tabStyles = StyleSheet.create({
   iconWrapper: {
     position: 'relative',
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -6,
-    backgroundColor: Colors.accent,
+    top: -5,
+    right: -7,
+    backgroundColor: Colors.primary,
     borderRadius: 10,
-    minWidth: 18,
-    height: 18,
+    minWidth: 17,
+    height: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
     borderWidth: 1.5,
-    borderColor: Colors.white,
+    borderColor: Colors.background,
   },
   badgeText: {
-    ...Typography.caption,
     color: Colors.white,
     fontWeight: '800',
-    fontSize: 10,
+    fontSize: 9,
+    lineHeight: 12,
   },
 });
 
@@ -75,17 +75,14 @@ export const TabNavigator: React.FC = () => {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.surface,
           borderTopColor: Colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 10,
-          elevation: 12,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
+          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 26 : 8,
+          paddingTop: 8,
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textMuted,
@@ -93,6 +90,7 @@ export const TabNavigator: React.FC = () => {
           ...Typography.caption,
           fontWeight: '600',
           marginTop: 2,
+          fontSize: 11,
         },
       }}
     >
@@ -101,7 +99,7 @@ export const TabNavigator: React.FC = () => {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Swipe',
-          tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="flame" focused={focused} />,
         }}
       />
       <Tab.Screen

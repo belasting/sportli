@@ -122,7 +122,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
 
         {/* Distance */}
         <View style={styles.distanceRow}>
-          <Ionicons name="location-outline" size={14} color={Colors.primaryLight} />
+          <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.75)" />
           <Text style={styles.distanceText}>
             {user.distance < 1
               ? `${(user.distance * 1000).toFixed(0)}m away`
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   verifiedText: {
     ...Typography.caption,
-    color: Colors.primaryLight,
+    color: Colors.white,
     fontWeight: '600',
   },
   premiumBadge: {
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   distanceText: {
     ...Typography.bodySmall,
-    color: Colors.primaryLight,
+    color: 'rgba(255,255,255,0.75)',
     fontWeight: '500',
   },
   sportsRow: {

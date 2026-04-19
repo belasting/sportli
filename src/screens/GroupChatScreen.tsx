@@ -54,9 +54,20 @@ const GroupBubble: React.FC<{
       {!isOwn && showAvatar && (
         <Text style={gb.senderName}>{senderName}</Text>
       )}
-      <View style={[gb.bubble, isOwn ? gb.ownBubble : gb.otherBubble]}>
-        <Text style={[gb.text, isOwn && gb.ownText]}>{message.text}</Text>
-      </View>
+      {isOwn ? (
+        <LinearGradient
+          colors={['#FF6B35', '#FF3366']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[gb.bubble, gb.ownBubble]}
+        >
+          <Text style={[gb.text, gb.ownText]}>{message.text}</Text>
+        </LinearGradient>
+      ) : (
+        <View style={[gb.bubble, gb.otherBubble]}>
+          <Text style={gb.text}>{message.text}</Text>
+        </View>
+      )}
       <Text style={[gb.time, isOwn && gb.ownTime]}>{formatTime(message.timestamp)}</Text>
     </View>
   </View>
@@ -76,15 +87,15 @@ const gb = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   ownBubble: {
-    backgroundColor: Colors.primary,
     borderBottomRightRadius: BorderRadius.sm,
   },
   otherBubble: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surfaceAlt,
     borderBottomLeftRadius: BorderRadius.sm,
-    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  text: { ...Typography.bodyLarge, color: Colors.textPrimary },
+  text: { ...Typography.bodyLarge, color: Colors.textPrimary, lineHeight: 22 },
   ownText: { color: Colors.white },
   time: { ...Typography.caption, color: Colors.textMuted, marginHorizontal: 4 },
   ownTime: { textAlign: 'right' },
@@ -272,7 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
@@ -283,7 +294,7 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 1.5,
-    borderColor: Colors.white,
+    borderColor: Colors.surface,
   },
   membersText: { ...Typography.caption, color: Colors.textSecondary, flex: 1 },
   messagesList: {
@@ -298,7 +309,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
   },
   reactionBtn: {
     width: 36,
@@ -316,7 +327,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.sm,
     paddingBottom: Platform.OS === 'ios' ? 28 : Spacing.base,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
   },
   attachBtn: {
     width: 44,

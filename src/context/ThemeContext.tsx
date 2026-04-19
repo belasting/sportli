@@ -1,89 +1,64 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 
-// ─── Light Palette ────────────────────────────────────────────────────────────
+// ─── Dark Palette (default — matches design system) ──────────────────────────
 
-const lightColors = {
-  primary: '#4FC3F7',
-  primaryDark: '#0288D1',
-  primaryLight: '#E1F5FE',
-  secondary: '#FF9800',
-  secondaryLight: '#FFF3E0',
-  accent: '#FF5252',
-  accentLight: '#FFEBEE',
+const darkColors = {
+  primary: '#FF3366',
+  primaryDark: '#CC1144',
+  primaryLight: 'rgba(255,51,102,0.15)',
+  secondary: '#FF6B35',
+  secondaryLight: 'rgba(255,107,53,0.15)',
+  accent: '#EF4444',
+  accentLight: 'rgba(239,68,68,0.12)',
 
   white: '#FFFFFF',
+  background: '#0E0B1E',
+  surface: '#1A1728',
+  surfaceAlt: '#231E36',
+
+  textPrimary: '#FFFFFF',
+  textSecondary: 'rgba(255,255,255,0.6)',
+  textMuted: 'rgba(255,255,255,0.35)',
+  textInverse: '#0E0B1E',
+
+  border: 'rgba(255,255,255,0.09)',
+  borderFocus: '#FF3366',
+
+  success: '#4CAF50',
+  warning: '#FF9800',
+  error: '#EF4444',
+
+  gradientPrimary: ['#FF6B35', '#FF3366'] as [string, string],
+  gradientFire: ['#FF6B35', '#FF3366'] as [string, string],
+  gradientCard: ['transparent', 'rgba(0,0,0,0.9)'] as [string, string],
+
+  likeOverlay: 'rgba(255,51,102,0.82)',
+  nopeOverlay: 'rgba(239,68,68,0.82)',
+
+  shadow: 'rgba(0,0,0,0.28)',
+  shadowDark: 'rgba(0,0,0,0.52)',
+
+  cardBg: '#0E0B1E',
+};
+
+// ─── Light Palette (legacy) ───────────────────────────────────────────────────
+
+const lightColors = {
+  ...darkColors,
   background: '#F8F9FA',
   surface: '#FFFFFF',
   surfaceAlt: '#F0F4F8',
-
   textPrimary: '#1A1A2E',
   textSecondary: '#6B7280',
   textMuted: '#9CA3AF',
   textInverse: '#FFFFFF',
-
   border: '#E5E7EB',
-  borderFocus: '#4FC3F7',
-
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
-
-  gradientPrimary: ['#4FC3F7', '#0288D1'] as [string, string],
-  gradientFire: ['#FF9800', '#FF5252'] as [string, string],
-  gradientCard: ['transparent', 'rgba(0,0,0,0.85)'] as [string, string],
-
-  likeOverlay: 'rgba(79, 195, 247, 0.85)',
-  nopeOverlay: 'rgba(255, 82, 82, 0.85)',
-
+  cardBg: '#1a1a2e',
   shadow: 'rgba(0,0,0,0.08)',
   shadowDark: 'rgba(0,0,0,0.18)',
-
-  // Card stack bg
-  cardBg: '#1a1a2e',
 };
 
-// ─── Dark Palette ─────────────────────────────────────────────────────────────
-
-const darkColors = {
-  primary: '#4FC3F7',
-  primaryDark: '#0288D1',
-  primaryLight: '#0D2535',
-  secondary: '#FF9800',
-  secondaryLight: '#1A0F00',
-  accent: '#FF5252',
-  accentLight: '#1A0808',
-
-  white: '#1E1E2E',
-  background: '#0F0F1A',
-  surface: '#1A1A2E',
-  surfaceAlt: '#16213E',
-
-  textPrimary: '#F0F0FF',
-  textSecondary: '#A0AEC0',
-  textMuted: '#718096',
-  textInverse: '#0F0F1A',
-
-  border: '#2D3748',
-  borderFocus: '#4FC3F7',
-
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
-
-  gradientPrimary: ['#4FC3F7', '#0288D1'] as [string, string],
-  gradientFire: ['#FF9800', '#FF5252'] as [string, string],
-  gradientCard: ['transparent', 'rgba(0,0,0,0.92)'] as [string, string],
-
-  likeOverlay: 'rgba(79, 195, 247, 0.85)',
-  nopeOverlay: 'rgba(255, 82, 82, 0.85)',
-
-  shadow: 'rgba(0,0,0,0.35)',
-  shadowDark: 'rgba(0,0,0,0.55)',
-
-  cardBg: '#0D0D1A',
-};
-
-export type AppColors = typeof lightColors;
+export type AppColors = typeof darkColors;
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -94,13 +69,13 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  isDark: false,
+  isDark: true,
   toggleTheme: () => {},
-  colors: lightColors,
+  colors: darkColors,
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true); // Always dark — matches design system
 
   const value = useMemo<ThemeContextValue>(
     () => ({

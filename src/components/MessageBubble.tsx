@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { Message } from '../types';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 
@@ -8,29 +10,41 @@ interface MessageBubbleProps {
   isOwn: boolean;
 }
 
-const formatTime = (date: Date): string => {
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-};
+const formatTime = (date: Date): string =>
+  date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
   return (
     <View style={[styles.container, isOwn ? styles.own : styles.other]}>
-      <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
-        <Text style={[styles.text, isOwn ? styles.ownText : styles.otherText]}>
-          {message.text}
-        </Text>
+      {isOwn ? (
+        <LinearGradient
+          colors={['#FF6B35', '#FF3366']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.bubble, styles.ownBubble]}
+        >
+          <Text style={[styles.text, styles.ownText]}>{message.text}</Text>
+        </LinearGradient>
+      ) : (
+        <View style={[styles.bubble, styles.otherBubble]}>
+          <Text style={[styles.text, styles.otherText]}>{message.text}</Text>
+        </View>
+      )}
+
+      <View style={[styles.timeRow, isOwn ? styles.timeRowOwn : styles.timeRowOther]}>
+        <Text style={styles.time}>{formatTime(message.timestamp)}</Text>
+        {isOwn && message.isRead && (
+          <Ionicons name="checkmark-done" size={11} color={Colors.primary} />
+        )}
       </View>
-      <Text style={[styles.time, isOwn ? styles.ownTime : styles.otherTime]}>
-        {formatTime(message.timestamp)}
-      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    maxWidth: '75%',
-    marginVertical: 2,
+    maxWidth: '76%',
+    marginVertical: 3,
   },
   own: {
     alignSelf: 'flex-end',
@@ -41,20 +55,20 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   bubble: {
-    borderRadius: BorderRadius['2xl'],
+    borderRadius: 20,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
   },
   ownBubble: {
-    backgroundColor: Colors.primary,
-    borderBottomRightRadius: BorderRadius.sm,
+    borderBottomRightRadius: 5,
   },
   otherBubble: {
     backgroundColor: Colors.surfaceAlt,
-    borderBottomLeftRadius: BorderRadius.sm,
+    borderBottomLeftRadius: 5,
   },
   text: {
     ...Typography.bodyLarge,
+    lineHeight: 22,
   },
   ownText: {
     color: Colors.white,
@@ -62,15 +76,18 @@ const styles = StyleSheet.create({
   otherText: {
     color: Colors.textPrimary,
   },
-  time: {
-    ...Typography.caption,
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     marginTop: 3,
     marginHorizontal: Spacing.xs,
   },
-  ownTime: {
+  timeRowOwn: { justifyContent: 'flex-end' },
+  timeRowOther: { justifyContent: 'flex-start' },
+  time: {
+    ...Typography.caption,
     color: Colors.textMuted,
-  },
-  otherTime: {
-    color: Colors.textMuted,
+    fontSize: 10,
   },
 });
